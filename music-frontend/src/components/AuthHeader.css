@@ -26,7 +26,3 @@
   font-weight: 900;
   color: var(--color-accent); /* Màu xanh Spotify */
 }
-.content-placeholder {
-    height: 60px; /* Bằng chiều cao của Header */
-    width: 100%;
-}

@@ -7,10 +7,12 @@ import {
   UpdateDateColumn, 
   ManyToOne, 
   OneToOne, 
-  JoinColumn 
+  JoinColumn,
+  OneToMany
 } from 'typeorm';
 import { Role } from '../role/role.entity';
 import { Artist } from '../artist/artist.entity';
+import { UserLikedSongs } from '../like/user-liked-songs.entity'; // <-- THÊM DÒNG NÀY
 
 @Entity('User')
 export class User {
@@ -28,16 +30,19 @@ export class User {
   password: string;
   // =============================
 
-  @Column({ type: 'boolean', default: false })
-  active: boolean;
+  // === SỬA DÒNG NÀY ===
+  @Column({ type: 'tinyint', default: 2 }) // Sử dụng 'tinyint' hoặc 'int' cho các giá trị 0, 1, 2
+  active: number; // <-- Đổi kiểu thành number
 
   // === CỘT MỚI: DÙNG CHO MÃ OTP ===
-  @Column({ type: 'varchar', length: 255, nullable: true, select: false }) 
-  verification_token: string | null; // <-- Tên cột giữ nguyên, nhưng giờ lưu OTP 6 ký tự
+// === THÊM name: 'verification_token' ===
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false, name: 'verification_token' }) 
+  verification_token: string | null; 
 
-  @Column({ type: 'datetime', nullable: true, select: false }) // <-- CỘT MỚI
-  otp_expiry: Date | null; // Lưu thời gian hết hạn của OTP (ví dụ: 5 phút sau khi gửi)
-  // =================================
+  // === THÊM name: 'otp_expiry' ===
+  @Column({ type: 'datetime', nullable: true, select: false, name: 'otp_expiry' }) 
+  otp_expiry: Date | null;
+    // =================================
 
   // ... (gender, birth_year) ...
   @Column({ 
@@ -64,4 +69,6 @@ export class User {
   @OneToOne(() => Artist, (artist) => artist.user)
   artist: Artist;
 
+  @OneToMany(() => UserLikedSongs, (likedSong) => likedSong.user)
+  likedSongs: UserLikedSongs[]; // <-- THÊM DÒNG NÀY
 }

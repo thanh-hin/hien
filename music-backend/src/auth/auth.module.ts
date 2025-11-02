@@ -13,6 +13,7 @@ import { User } from '../user/user.entity';
 import { Role } from '../role/role.entity';
 import { JwtStrategy } from './jwt.strategy'; 
 import { SharedModule } from '../shared/shared.module';
+import { TotpModule } from '../totp/totp.module'; // <-- IMPORT MỚI
 
 @Module({
   imports: [
@@ -21,10 +22,11 @@ import { SharedModule } from '../shared/shared.module';
     TypeOrmModule.forFeature([User, Role]),
 
     SharedModule,
+    TotpModule,
 
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: 'YOUR_SECRET_KEY', 
+      secret: 'my_super_secure_lame_secret_12345', 
       signOptions: { expiresIn: '1d' },
     }),
   ],

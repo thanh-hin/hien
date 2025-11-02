@@ -45,7 +45,6 @@ export class ArtistService {
       relations: ['user', 'songs', 'albums'], 
       // Sắp xếp dữ liệu liên quan
       order: {
-        songs: { play_count: 'DESC' }, // Top songs
         albums: { release_date: 'DESC' } // Album mới nhất
       }
     });

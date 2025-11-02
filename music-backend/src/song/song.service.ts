@@ -6,6 +6,8 @@ import { Song } from './song.entity';
 import { JwtPayload } from '../auth/jwt.strategy'; 
 import { Artist } from '../artist/artist.entity'; // <-- Cần import
 import { Lyrics } from '../lyrics/lyrics.entity'; // <-- (1) IMPORT
+import { Album } from '../album/album.entity'; // <-- CẦN
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class SongService {
@@ -16,53 +18,70 @@ export class SongService {
     private artistRepository: Repository<Artist>, 
     @InjectRepository(Lyrics)
     private lyricsRepository: Repository<Lyrics>,
+    @InjectRepository(Album) private albumRepository: Repository<Album>,
   ) {}
 
   
   /**
    * Hàm lấy bài hát (cho Trang Home) - ĐÃ THÊM LIMIT
    */
-  async findAll(user: JwtPayload | null): Promise<Song[]> {
-    
+async findAll(user: JwtPayload | null): Promise<Song[]> {
     const query = this.songRepository
       .createQueryBuilder('song')
-      .leftJoinAndSelect('song.artist', 'artist') 
-      .leftJoinAndSelect('song.album', 'album')   
+      .leftJoinAndSelect('song.artist', 'artist')
+      .leftJoinAndSelect('song.album', 'album')
       .where('song.active = :active', { active: true });
 
     if (user) {
-      // LOGIC KHI ĐÃ ĐĂNG NHẬP (Lấy 5 bài hát hot nhất)
+      // Logic khi đã đăng nhập: XÓA 'play_count'
       return query
-        .orderBy('song.play_count', 'DESC')
-        .limit(5) // <-- CHỈ LẤY 5 BÀI
+        // === SỬA DÒNG NÀY: BỎ SẮP XẾP THEO LƯỢT NGHE ===
+        .orderBy('song.id', 'DESC') // Sắp xếp theo ID mới nhất (hoặc bất kỳ cột nào)
+        // =============================================
+        .limit(5)
         .getMany();
     } else {
-      // LOGIC KHI CHƯA ĐĂNG NHẬP (Lấy 5 bài hát ngẫu nhiên)
+      // Logic khi là khách (ngẫu nhiên) giữ nguyên
       return query
         .orderBy('RAND()', 'ASC')
-        .limit(5) // <-- CHỈ LẤY 5 BÀI
+        .limit(5)
         .getMany();
     }
   }
 
   /**
-   * Lấy chi tiết một bài hát theo ID
-   */
-  async findOne(id: number): Promise<Song | null> {
-    return this.songRepository.findOne({
-      where: { id: id, active: true },
-      // Quan trọng: Phải lấy Album và Artist để hiển thị
-      relations: ['artist', 'album'], 
+     * Hàm findOne (API Song Detail)
+     */
+    async findOne(id: number): Promise<Song> {
+    const song = await this.songRepository.findOne({
+        where: { id: id, active: true },
+        relations: ['artist', 'album'], 
     });
-  }
+    
+    if (!song) {
+        throw new NotFoundException(`Song with ID ${id} not found or is inactive.`); 
+    }
+
+    // === SỬA LỖI ĐƯỜNG DẪN: ĐẢM BẢO FILE_URL DÙNG /media ===
+    // Nếu file_url trong DB vẫn là /audio/track1.mp3, nó sẽ bị lỗi 404.
+    // LƯU Ý: BƯỚC NÀY THAY THẾ CHO VIỆC CHÈN LẠI DỮ LIỆU SQL
+    if (song.file_url && song.file_url.startsWith('/audio')) {
+        // Tạm thời sửa đường dẫn nếu nó vẫn là đường dẫn Frontend cũ
+        song.file_url = song.file_url.replace('/audio', '/media/audio');
+    }
+    // ====================================================
+
+    return song;
+    }
+
   // Cần export class SongService
 
   /**
    * (3) HÀM MỚI: Lấy lời bài hát theo ID bài hát
    */
   async findLyrics(songId: number): Promise<Lyrics | null> {
-    return this.lyricsRepository.findOne({
-      where: { song_id: songId },
-    });
-  }
+      return this.lyricsRepository.findOne({
+        where: { song_id: songId }, // <-- SỬ DỤNG song_id CHÍNH XÁC
+      });
+    }
 }

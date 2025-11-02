@@ -1,4 +1,4 @@
-// music-frontend/src/components/PlayerBar.jsx
+// music-frontend/src/components/PlayerBar.jsx (BẢN NÂNG CẤP NEXT/PREVIOUS)
 import React, { useEffect } from 'react'; 
 import { usePlayer } from '../context/PlayerContext';
 import AudioPlayer from 'react-h5-audio-player'; 
@@ -14,19 +14,26 @@ import {
 import { HiVolumeUp } from 'react-icons/hi';
 
 const PlayerBar = () => {
-  // LẤY audioRef TỪ CONTEXT
-  const { currentTrack, isPlaying, setIsPlaying, audioRef } = usePlayer(); 
+  // (1) LẤY THÊM CÁC HÀM MỚI
+  const { 
+    currentTrack, isPlaying, setIsPlaying, audioRef, 
+    currentPlaylist, playNext, playPrevious 
+  } = usePlayer(); 
 
-  // LOGIC ĐIỀU KHIỂN PLAYER TỪ CONTEXT
+  // (useEffect điều khiển Play/Pause giữ nguyên)
   useEffect(() => {
     if (audioRef.current && audioRef.current.audio.current) {
+      const audio = audioRef.current.audio.current;
+      if (currentTrack?.file_url && audio.src !== currentTrack.file_url) {
+        audio.load(); 
+      }
       if (isPlaying) {
-        audioRef.current.audio.current.play();
+        audio.play();
       } else {
-        audioRef.current.audio.current.pause();
+        audio.pause();
       }
     }
-  }, [isPlaying, currentTrack]); 
+  }, [isPlaying, currentTrack, audioRef]); 
 
   const isReady = !!currentTrack; 
 
@@ -37,8 +44,26 @@ const PlayerBar = () => {
     next: <IoPlaySkipForwardSharp size={22} />,
   };
 
+  // (2) HÀM XỬ LÝ KHI BÀI HÁT KẾT THÚC
+  const handleNextOnEnd = () => {
+    if (currentPlaylist.length > 1) { // Chỉ next nếu playlist có nhiều hơn 1 bài
+        playNext();
+    } else {
+        setIsPlaying(false);
+    }
+  };
+
+  // (3) HÀM XỬ LÝ KHI CLICK NÚT NEXT/PREVIOUS TRÊN PLAYER
+  const handleNextClick = () => {
+    if (currentPlaylist.length > 0) playNext();
+  };
+  const handlePreviousClick = () => {
+    if (currentPlaylist.length > 0) playPrevious();
+  };
+
   return (
     <div className={`player-bar-container ${!isReady ? 'empty' : ''}`}>
+      {/* ... (Thông tin bài hát giữ nguyên) ... */}
       {/* 1. Thông tin bài hát */}
       <div className="player-track-info">
         {isReady ? (
@@ -57,10 +82,10 @@ const PlayerBar = () => {
         )}
       </div>
       
-      {/* 2. Trình phát nhạc */}
+      
       {isReady && (
         <AudioPlayer
-          ref={audioRef} // <-- GÁN REF TỪ CONTEXT
+          ref={audioRef} 
           className="audio-player-core"
           src={currentTrack.file_url} 
           showSkipControls={true} 
@@ -68,9 +93,15 @@ const PlayerBar = () => {
           customIcons={customIcons} 
           onPlay={() => setIsPlaying(true)} 
           onPause={() => setIsPlaying(false)} 
+          
+          // (4) GÁN CÁC HÀM MỚI VÀO PLAYER
+          onEnded={handleNextOnEnd} 
+          onClickNext={handleNextClick} 
+          onClickPrevious={handlePreviousClick} 
         />
       )}
       
+      {/* ... (Điều khiển Âm lượng giữ nguyên) ... */}
       {/* 3. Điều khiển Âm lượng */}
       {isReady && (
         <div className="player-volume-controls">

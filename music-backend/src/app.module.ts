@@ -11,6 +11,8 @@ import { AuthModule } from './auth/auth.module';
 import { SongModule } from './song/song.module';
 import { ArtistModule } from './artist/artist.module'; // <-- IMPORT MỚI
 import { MailerModule } from '@nestjs-modules/mailer'; // <-- (1) IMPORT
+import { LikeModule } from './like/like.module'; // <-- THÊM DÒNG NÀY
+import { TotpModule } from './totp/totp.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { MailerModule } from '@nestjs-modules/mailer'; // <-- (1) IMPORT
     AuthModule,
     SongModule,
     ArtistModule,
+    LikeModule,
+    TotpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,6 +8,9 @@ import { AuthService } from './auth.service';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto'; // <-- IMPORT DTO MỚI
+import { ResendOtpDto } from './dto/resend-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto'; // <-- IMPORT MỚI
+import { ResetPasswordWithOtpDto } from './dto/reset-password-with-otp.dto'; // <-- IMPORT MỚI
 
 @Controller('auth') 
 export class AuthController {
@@ -39,4 +42,21 @@ export class AuthController {
   }
   
   // API link cũ GET /auth/confirm ĐÃ BỊ XÓA
+
+  @Post('resend-otp')
+  resendOtp(@Body() resendOtpDto: ResendOtpDto) {
+    return this.authService.resendOtp(resendOtpDto);
+  }
+
+  @Post('/forgot-password')
+  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPasswordOtp(forgotPasswordDto);
+  }
+
+  // === ENDPOINT 6: ĐẶT LẠI MẬT KHẨU (DÙNG OTP) ===
+  @Post('/reset-password-otp')
+  resetPassword(@Body() resetPasswordDto: ResetPasswordWithOtpDto) {
+    // Trả về { message: 'Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập.' }
+    return this.authService.resetPasswordOtp(resetPasswordDto);
+  }
 }

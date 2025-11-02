@@ -7,11 +7,13 @@ import {
   UpdateDateColumn, 
   ManyToOne, 
   OneToOne, 
-  JoinColumn 
+  JoinColumn,
+  OneToMany
 } from 'typeorm';
 import { Album } from '../album/album.entity';
 import { Artist } from '../artist/artist.entity';
 import { Lyrics } from '../lyrics/lyrics.entity';
+import { UserLikedSongs } from '../like/user-liked-songs.entity'; // <-- THÊM DÒNG NÀY
 
 @Entity('Song') // Ánh xạ với bảng 'Song'
 export class Song {
@@ -27,8 +29,6 @@ export class Song {
   @Column({ type: 'varchar', length: 255 })
   file_url: string;
 
-  @Column({ type: 'bigint', default: 0 })
-  play_count: number;
 
   @Column({ type: 'boolean', default: true })
   active: boolean;
@@ -55,4 +55,8 @@ export class Song {
   // Quan hệ: Một Song có một Lyrics (1-1)
   @OneToOne(() => Lyrics, (lyrics) => lyrics.song)
   lyrics: Lyrics;
+
+  // Quan hệ: Bài hát này được thích bởi những User nào
+  @OneToMany(() => UserLikedSongs, (likedSong) => likedSong.song)
+  likedByUsers: UserLikedSongs[]; // <-- THÊM DÒNG NÀY
 }

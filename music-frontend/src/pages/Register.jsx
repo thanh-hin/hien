@@ -1,4 +1,4 @@
-// music-frontend/src/pages/Register.jsx (BẢN FINAL ĐÃ SỬA LỖI CHUYỂN HƯỚNG)
+// music-frontend/src/pages/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { registerApi } from '../utils/api'; 
@@ -12,7 +12,7 @@ const Register = () => {
   const [gender, setGender] = useState('prefer not to say');
   const [birthYear, setBirthYear] = useState(''); 
   
-  // Dùng Object để lưu trữ lỗi theo từng trường (username, email, ...)
+  // Dùng Object để lưu trữ lỗi theo từng trường
   const [errors, setErrors] = useState({}); 
   const navigate = useNavigate();
 
@@ -29,7 +29,7 @@ const Register = () => {
         else newErrors.general = msg; // Lỗi chung
       });
     } else {
-      // Lỗi chuỗi đơn (409 Conflict)
+      // Lỗi chuỗi đơn (ví dụ: Conflict)
       newErrors.general = errorMessages || 'Đăng ký thất bại. Lỗi kết nối.';
     }
     return newErrors;
@@ -52,17 +52,29 @@ const Register = () => {
       const response = await registerApi(dataToSend);
       
       // 2. NẾU THÀNH CÔNG: CHUYỂN HƯỚNG SANG TRANG NHẬP OTP
-      // Chúng ta truyền email sang trang OTP để biết đang xác nhận cho ai
       navigate('/verify-otp', { 
           state: { 
-              email: response.email // <-- Lấy email từ response của Backend
+              // Backend trả về email của user vừa được tạo
+              email: response.email 
           } 
       }); 
 
     } catch (err) {
-      // Xử lý lỗi validation hoặc lỗi 409
+      // Xử lý lỗi validation, 409, hoặc lỗi pending_verification
       const errorData = err.response?.data;
-      setErrors(parseErrors(errorData?.message));
+      
+      // LOGIC XỬ LÝ LỖI PENDING VERIFICATION (Gửi lại mã mới)
+      if (errorData?.status === 'pending_verification') {
+        setErrors({ general: errorData.message }); 
+        
+        // Chuyển hướng sau 1 giây để người dùng đọc thông báo
+        setTimeout(() => {
+             navigate('/verify-otp', { state: { email: dataToSend.email } });
+        }, 1000); 
+      } else {
+        // Xử lý lỗi thông thường (validation/conflict)
+        setErrors(parseErrors(errorData?.message));
+      }
     }
   };
 
@@ -89,7 +101,7 @@ const Register = () => {
           {/* Username */}
           <input
             type="text"
-            placeholder="Tên đăng nhập"
+            placeholder="Họ và tên"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required

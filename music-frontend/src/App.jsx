@@ -1,10 +1,11 @@
-// music-frontend/src/App.jsx (FULL CODE SỬA LỖI CRASH)
+// music-frontend/src/App.jsx (FULL CODE)
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 // Import Layouts
 import MainAppLayout from './components/MainAppLayout'; 
 import AdminRoute from './components/AdminRoute'; 
+import ProtectedRoute from './components/ProtectedRoute'; // <-- (1) IMPORT GUARD
 
 // Import Trang
 import Home from './pages/Home';
@@ -13,47 +14,42 @@ import Register from './pages/Register';
 import AdminPage from './pages/AdminPage';
 import SongDetail from './pages/SongDetail'; 
 import ArtistDetail from './pages/ArtistDetail'; 
-import VerifyOtp from './pages/VerifyOtp'; // <-- (1) IMPORT COMPONENT MỚI
+import VerifyOtp from './pages/VerifyOtp'; 
+import ForgotPassword from './pages/ForgotPassword'; 
+import ResetPassword from './pages/ResetPassword';
+import LikedSongsPage from './pages/LikedSongsPage'; // <-- (2) IMPORT TRANG MỚI
 
 function App() {
-  return (
-    <Routes>
-      {/* 1. ROUTE PUBLIC KHÔNG CÓ LAYOUT (Login/Register) */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+  return (
+    <Routes>
+      {/* 1. ROUTE PUBLIC (Không layout) */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/verify-otp" element={<VerifyOtp />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      
+      {/* 2. ROUTE CHÍNH (Layout Gốc) */}
+      <Route path="/" element={<MainAppLayout />}> 
+        <Route index element={<Home />} /> 
+        <Route path="song/:id" element={<SongDetail />} /> 
+        <Route path="artist/:id" element={<ArtistDetail />} /> 
+        <Route path="blog" element={<div>Trang Blog (Sắp ra mắt)</div>} />
 
-      {/* === (2) THÊM ROUTE BỊ THIẾU === */}
-      <Route path="/verify-otp" element={<VerifyOtp />} /> 
-      {/* ================================= */}
-      
-      {/* 2. ROUTE CHÍNH (LAYOUT GỐC: Header, Sidebar, PlayerBar) */}
-      <Route path="/" element={<MainAppLayout />}> 
-        
-        {/* Index Route: Trang chủ (URL: /) */}
-        <Route index element={<Home />} /> 
-        
-        {/* Trang chi tiết Bài hát */}
-        <Route path="song/:id" element={<SongDetail />} /> 
-        
-        {/* Trang chi tiết Nghệ sĩ */}
-        <Route path="artist/:id" element={<ArtistDetail />} /> 
-
-        {/* Thêm các Route Public khác vào đây (Search, Blog...) */}
-        <Route path="blog" element={<div>Trang Blog (Sắp ra mắt)</div>} />
-
-        {/* 3. ROUTE ADMIN (BẢO VỆ RIÊNG) */}
-        {/* Vì AdminRoute tự kiểm tra, chúng ta đặt nó là một route độc lập */}
-        <Route element={<AdminRoute />}>
-          <Route path="admin" element={<AdminPage />} />
-        </Route>
-        
-        {/* Catch-all cho các URL không hợp lệ (optional) */}
-        <Route path="*" element={<div>404: Không tìm thấy trang này.</div>} />
-
-      </Route>
-      
-    </Routes>
-  );
+        {/* (3) ROUTE BẢO VỆ (CẦN LOGIN) */}
+        <Route element={<ProtectedRoute />}>
+            <Route path="liked-songs" element={<LikedSongsPage />} />
+        </Route>
+      </Route>
+      
+      {/* 3. ROUTE ADMIN (BẢO VỆ RIÊNG) */}
+      <Route element={<AdminRoute />}>
+        <Route path="/admin" element={<AdminPage />} />
+      </Route>
+      
+      <Route path="*" element={<div>404: Không tìm thấy trang này.</div>} />
+    </Routes>
+  );
 }
 
 export default App;

@@ -1,8 +1,8 @@
-// music-frontend/src/pages/SongDetail.jsx (BẢN FINAL VỚI REPLAY & FIX LỖI)
+// music-frontend/src/pages/SongDetail.jsx (FULL CODE FINAL)
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { usePlayer } from '../context/PlayerContext';
+import { api } from '../utils/api'; // Dùng API instance đã có token
+import { usePlayer } from '../context/PlayerContext'; 
 import './SongDetail.css'; 
 import { FaPlay, FaHeart, FaPause, FaEllipsisV, FaRedo } from 'react-icons/fa'; 
 import { useAuth } from '../context/AuthContext'; 
@@ -10,99 +10,110 @@ import { useAuth } from '../context/AuthContext';
 const SongDetail = () => {
   const { id } = useParams(); 
   const navigate = useNavigate();
-  // LẤY audioRef TỪ CONTEXT
-  const { playTrack, currentTrack, isPlaying, setIsPlaying, audioRef } = usePlayer(); 
+  const { playTrack, currentTrack, isPlaying, setIsPlaying, audioRef } = usePlayer();
   const { isAuthenticated } = useAuth(); 
   
   const [song, setSong] = useState(null);
   const [lyrics, setLyrics] = useState(''); 
   const [loading, setLoading] = useState(true);
   const [loadingLyrics, setLoadingLyrics] = useState(true); 
-  const [isLiked, setIsLiked] = useState(false); 
-  const [error, setError] = useState(''); // State giữ lỗi API
+  const [isLiked, setIsLiked] = useState(false); // <-- STATE TRẠNG THÁI LIKE
+  const [error, setError] = useState(''); 
 
-  // === useEffect 1: Tải Data (Tách ra để tránh lặp) ===
+  // Tải Data & Trạng thái Like
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       setLoadingLyrics(true);
       setError(''); 
       try {
-        // Tải Song và Lyrics cùng lúc
         const [songRes, lyricsRes] = await Promise.all([
-          axios.get(`http://localhost:3000/song/${id}`),
-          axios.get(`http://localhost:3000/song/${id}/lyrics`).catch(err => null) // Bắt lỗi nếu ko có lời
+          api.get(`/song/${id}`), 
+          api.get(`/song/${id}/lyrics`).catch(err => {
+            if (err.response && err.response.status === 404) return { data: { lyrics: 'Không tìm thấy lời bài hát.' } };
+            return null;
+          }) 
         ]);
         
         if (songRes.data) {
-            setSong(songRes.data); 
+            const songData = songRes.data;
+            
+            // LOGIC SỬA ĐƯỜNG DẪN TUYỆT ĐỐI
+            let url = songData.file_url;
+            
+            if (url.startsWith('/audio/')) {
+                // Thay thế đường dẫn cũ (/audio) bằng đường dẫn mới (/media/audio)
+                url = url.replace('/audio', '/media/audio');
+            }
+            
+            // Gán URL tuyệt đối cho Player
+            songData.file_url = `http://localhost:3000${url}`; 
+            
+            setSong(songData);
         } else {
             throw new Error('Không tìm thấy bài hát');
         }
         
-        if (lyricsRes && lyricsRes.data.lyrics) {
-          setLyrics(lyricsRes.data.lyrics);
+        // TẢI TRẠNG THÁI LIKE
+        if (isAuthenticated) {
+            const likeStatus = await api.get(`/like/${id}/status`);
+            setIsLiked(likeStatus.data.isLiked);
         } else {
-          setLyrics('Không tìm thấy lời bài hát.');
+            setIsLiked(false);
         }
+
+        // Tải Lyrics
+        setLyrics(lyricsRes && lyricsRes.data.lyrics ? lyricsRes.data.lyrics : 'Không tìm thấy lời bài hát.');
+        setLoadingLyrics(false);
         
       } catch (err) {
-        // Xử lý lỗi 404 (Không tìm thấy)
         console.error("Lỗi tải chi tiết bài hát:", err);
         setError('Không thể tìm thấy bài hát bạn yêu cầu.'); 
       } finally {
         setLoading(false);
-        setLoadingLyrics(false);
       }
     };
     loadData();
-  }, [id]); // Chạy lại khi ID thay đổi
+  }, [id, isAuthenticated, navigate, playTrack]); 
 
-  // === useEffect 2: Kích hoạt Phát nhạc (Khi 'song' được tải) ===
+  // KÍCH HOẠT PHÁT NHẠC
   useEffect(() => {
-    // Chỉ phát nếu bài hát tải thành công VÀ nó không phải là bài đang phát
     if (song && (!currentTrack || currentTrack.id !== song.id)) {
       playTrack(song);
     }
   }, [song, playTrack, currentTrack]); 
 
   
-  // Logic nút Play/Pause "thông minh"
   const isThisSongPlaying = currentTrack?.id === song?.id && isPlaying;
+  const handlePlayPause = () => { if (isThisSongPlaying) { setIsPlaying(false); } else { playTrack(song); } };
+  const handleReplay = () => { if (audioRef.current && audioRef.current.audio.current) { audioRef.current.audio.current.currentTime = 0; if (!isPlaying) { playTrack(song); } } };
 
-  const handlePlayPause = () => {
-    if (isThisSongPlaying) {
-      setIsPlaying(false);
-    } else {
-      playTrack(song);
+
+  // HÀM XỬ LÝ NÚT LIKE (TẠO API POST)
+  const handleLike = async () => {
+    if (!isAuthenticated) {
+        alert('Vui lòng đăng nhập để thích bài hát này.');
+        navigate('/login');
+        return;
+    }
+    
+    try {
+        const response = await api.post(`/like/${song.id}`);
+        setIsLiked(response.data.isLiked); 
+    } catch (error) {
+        console.error("Lỗi khi toggle like:", error);
+        if (error.response && error.response.status === 401) {
+             alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+        }
     }
   };
 
-  // === XỬ LÝ NÚT PHÁT LẠI (REPLAY) ===
-  const handleReplay = () => {
-    if (audioRef.current && audioRef.current.audio.current) {
-      audioRef.current.audio.current.currentTime = 0; // <-- Tua về 0
-      if (!isPlaying) {
-        playTrack(song); // Bật nhạc nếu đang tạm dừng
-      }
-    }
-  };
-  
-  const handleLike = () => { /* ... (logic like) ... */ };
 
-  
-  if (loading) {
-    return <div className="song-detail-loading">Đang tải chi tiết bài hát...</div>;
+  if (loading || error) {
+    return <div className="song-detail-error">{error || 'Đang tải...'}</div>;
   }
   
-  // NẾU CÓ LỖI (API 404)
-  if (error) {
-    return <div className="song-detail-error">{error}</div>;
-  }
-  
-  if (!song) {
-      return null;
-  }
+  if (!song) return null;
   
   return (
     <div className="song-detail-container">
@@ -117,18 +128,20 @@ const SongDetail = () => {
           <h1>{song.title}</h1>
           <p className="song-artist-info">
             <span className="artist-name">{song.artist?.stage_name}</span> • 
-            <span>{song.album?.title}</span> • 
-            <span>{song.play_count} lượt nghe</span>
+            <span>{song.album?.title}</span>
           </p>
 
           <div className="detail-controls">
-        
-            {/* NÚT PHÁT LẠI */}
-            <button className="detail-play-button" onClick={handleReplay}>
+            <button className="detail-play-button" onClick={handlePlayPause}>
+               {isThisSongPlaying ? <FaPause size={20} /> : <FaPlay size={20} />} 
+               {isThisSongPlaying ? 'TẠM DỪNG' : 'PHÁT'}
+            </button>
+            
+            <button className="icon-button" onClick={handleReplay}>
                <FaRedo size={20} /> PHÁT LẠI
             </button>
             
-            {/* Nút Like */}
+            {/* NÚT LIKE ĐÃ KẾT NỐI */}
             <button 
               className={`icon-button ${isLiked ? 'liked' : ''}`} 
               onClick={handleLike}
@@ -151,10 +164,10 @@ const SongDetail = () => {
             )}
         </div>
         
-        <div className="related-section">
+        {/* <div className="related-section">
             <h3>Ca khúc cùng thể loại</h3>
-            <p className="subtle-text">(Coming soon...)</p>
-        </div>
+            <p className="subtle-text">Hoàn thành tính năng Upload và Album để mở khóa gợi ý này!</p>
+        </div> */}
       </div>
     </div>
   );
