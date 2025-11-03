@@ -1,0 +1,179 @@
+/* src/pages/AllPages.css */
+
+/* Container tổng */
+.all-pages-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.count-badge {
+  background-color: #ff5c5c;
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Loading */
+.loading-artist {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 50px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 6px solid #eee;
+  border-top: 6px solid #ff5c5c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Grid nghệ sĩ */
+.artist-grid-new {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+/* Card nghệ sĩ */
+.artist-card-new {
+  background: #000000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.artist-card-new:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+/* Hình ảnh nghệ sĩ - tròn */
+.artist-img-box {
+  position: relative;
+  width: 140px;   /* nhỏ hơn trước để vừa nhìn đẹp */
+  height: 140px;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.artist-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.artist-card-new:hover .artist-img-box img {
+  transform: scale(1.05);
+}
+
+.play-hint {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  text-align: center;
+  font-size: 12px;
+  padding: 4px 0;
+  border-bottom-left-radius: 50%;
+  border-bottom-right-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.artist-card-new:hover .play-hint {
+  opacity: 1;
+}
+
+/* Text */
+.artist-text {
+  padding: 12px;
+  text-align: center;
+}
+
+.artist-text h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+.artist-text p {
+  font-size: 14px;
+  color: #777;
+  margin: 0;
+}
+
+/* Pagination */
+.pagination-new {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 30px 0 10px;
+  gap: 5px;
+}
+
+.pagination-new button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #f0f0f0;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pagination-new button:hover {
+  background-color: #ff5c5c;
+  color: #fff;
+}
+
+.pagination-new button.active {
+  background-color: #ff5c5c;
+  color: #fff;
+}
+
+.pagination-new button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-new span {
+  font-weight: 600;
+  font-size: 16px;
+  color: #555;
+}

@@ -1,0 +1,88 @@
+/* music-frontend/src/pages/AllPages.css (FULL CODE - DÃN CÁCH VÀ KÉO DÀI HƠN) */
+/* Dùng chung CSS với Home.css */
+@import './Home.css';
+
+.all-songs-container, .all-artists-container {
+  padding: 0 20px 40px; 
+}
+
+.all-songs-container h1, .all-artists-container h1 {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-bottom: 30px;
+}
+
+/* === THANH LỌC (FILTER BAR) === */
+.filter-bar {
+  display: flex;
+  gap: 20px; /* <-- Tăng khoảng cách */
+  margin-bottom: 40px; 
+}
+
+.filter-bar select, .filter-bar button {
+  padding: 10px 15px;
+  border-radius: 8px; 
+  border: 1px solid var(--color-border); 
+  background-color: #2A2A2A; 
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-bar button {
+  background-color: var(--color-accent);
+  color: var(--color-black);
+  font-weight: 600;
+}
+
+
+/* === GRID HIỂN THỊ TẤT CẢ BÀI HÁT (FIX CỘT VÀ KÍCH THƯỚC) === */
+.track-list-all-songs {
+  display: grid;
+  /* === THAY ĐỔI: TĂNG KÍCH THƯỚC MINMAX (MIN: 200px -> 220px) === */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+  gap: 30px; /* <-- TĂNG KHOẢNG CÁCH GIỮA CÁC Ô */
+  justify-items: center;
+}
+
+/* Nâng cấp kích thước thẻ bài hát (Kế thừa từ Home.css) */
+/* Cần đảm bảo Home.css có style cho .track-item */
+.track-list-all-songs .track-item {
+    padding: 20px; /* <-- TĂNG PADDING CHO THẺ DÀI RA (NHƯNG CẦN SỬA HOME.CSS ĐỂ CHÍNH XÁC) */
+    max-width: 280px; /* <-- TĂNG MAX WIDTH ĐỂ Ô TO HƠN */
+}
+
+/* Responsive cho grid */
+@media (max-width: 1600px) {
+  .track-list-all-songs {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+@media (max-width: 1200px) {
+  .track-list-all-songs {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+
+/* === GRID HIỂN THỊ TẤT CẢ NGHỆ SĨ === */
+.artist-grid-full {
+  display: grid;
+  /* Nới rộng minmax cho nghệ sĩ cũng to ra một chút */
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); 
+  gap: 30px; /* <-- TĂNG KHOẢNG CÁCH */
+}
+
+.artist-grid-full .artist-card {
+  width: 100%;
+  max-width: 220px; /* Nâng max width để to hơn */
+}
+.artist-grid-full .artist-card img {
+    /* Giữ kích thước cố định, nhưng có thể tăng thêm 10px */
+    width: 140px; 
+    height: 140px;
+    margin: 0 auto 12px;
+}

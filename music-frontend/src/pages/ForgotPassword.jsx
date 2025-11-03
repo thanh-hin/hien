@@ -48,7 +48,7 @@ const ForgotPassword = () => {
           {error && <p className="error-message-general">{error}</p>}
 
           <p className="sub-text" style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
-            Vui lòng nhập địa chỉ email để nhận mã đặt lại mật khẩu.
+            Vui lòng nhập địa chỉ email để đặt lại mật khẩu.
           </p>
 
           <input

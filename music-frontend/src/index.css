@@ -12,6 +12,7 @@
   /* Màu nhấn (Spotify Green) */
   --color-accent: #1ED760;
   --color-accent-hover: #1FDF64;
+  --color-text-primary: #ffffff; /* hoặc màu bạn muốn */
 }
 .main-content {
   background: linear-gradient(180deg, #1A1A1A 0%, var(--color-background) 350px);
@@ -20,6 +21,6 @@
 body {
   background-color: var(--color-background);
   color: var(--color-text-primary);
-  font-family: 'Helvetica', 'Arial', sans-serif; /* (Sẽ nâng cấp sau) */
+  font-family: 'Circular Std', sans-serif;
   overflow: hidden;
 }

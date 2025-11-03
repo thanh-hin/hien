@@ -1,4 +1,4 @@
-// music-frontend/src/pages/ArtistDetail.jsx (FULL CODE FINAL)
+// music-frontend/src/pages/ArtistDetail.jsx (BẢN SỬA LỖI FINAL)
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../utils/api'; // <-- (1) IMPORT 'api' (CÓ INTERCEPTOR)
@@ -23,14 +23,63 @@ const ArtistDetail = () => {
     return new Date().getFullYear() - year;
   };
 
+  // === CHỈ DÙNG 1 useEffect ĐỂ TẢI DATA ===
   useEffect(() => {
     const loadArtist = async () => {
       setLoading(true);
       setError('');
       try {
-        // (2) SỬ DỤNG 'api.get' THAY VÌ 'axios.get'
         const response = await api.get(`/artists/${id}`);
-        setArtist(response.data);
+        const artistData = response.data;
+
+        // === SỬA LỖI LINK ẢNH/NHẠC (LOGIC AN TOÀN) ===
+        // Hàm helper để fix URL
+        const fixUrl = (url, type = 'image') => {
+            if (!url) { // Xử lý NULL
+                return type === 'image' ? '/images/default-album.png' : '';
+            }
+            if (url.startsWith('http')) { // Nếu đã là URL tuyệt đối
+                return url;
+            }
+            // Mặc định (ví dụ: /images/artist-1.jpg)
+            const prefix = type === 'image' ? '/media/images' : '/media/audio';
+            const originalPath = type === 'image' ? '/images' : '/audio';
+            
+            // Đảm bảo không thay thế 2 lần
+            if (url.startsWith(prefix)) {
+                return `http://localhost:3000${url}`;
+            }
+            
+            return `http://localhost:3000${url.replace(originalPath, prefix)}`;
+        };
+        
+        // 1. Sửa URL Ảnh đại diện (Avatar)
+        artistData.avatar_url = fixUrl(artistData.avatar_url, 'image');
+
+        // 2. Sửa URL cho các Album
+        if (artistData.albums) {
+            artistData.albums = artistData.albums.map(album => ({
+                ...album,
+                cover_url: fixUrl(album.cover_url, 'image')
+            }));
+        }
+
+        // 3. Sửa URL cho các Bài hát
+        if (artistData.songs) {
+            artistData.songs = artistData.songs.map(song => {
+                // Sửa ảnh riêng của bài hát (nếu có)
+                const songImageUrl = song.image_url ? fixUrl(song.image_url, 'image') : null;
+                
+                return {
+                    ...song,
+                    file_url: fixUrl(song.file_url, 'audio'), // Fix file nhạc
+                    image_url: songImageUrl // Gán ảnh đã fix
+                };
+            });
+        }
+        // ===================================
+
+        setArtist(artistData);
       } catch (err) {
         console.error("Lỗi tải chi tiết nghệ sĩ:", err);
         setError('Không tìm thấy nghệ sĩ này.');
@@ -39,21 +88,17 @@ const ArtistDetail = () => {
       }
     };
     loadArtist();
-  }, [id]); // Bỏ 'navigate' khỏi dependency
+  }, [id]); // Chỉ chạy khi 'id' thay đổi
 
-  // (3) MẢNG AN TOÀN (Đã có)
+  // MẢNG AN TOÀN (Đã có)
   const songs = artist?.songs || []; 
   const albums = artist?.albums || []; 
 
-  // (4) SỬA LOGIC "PHÁT TẤT CẢ" (Gửi cả playlist)
+  // LOGIC "PHÁT TẤT CẢ" (Đã fix URL trong useEffect)
   const playArtistSongs = () => {
     if (songs.length > 0) { 
-      // Sửa đường dẫn file_url cho toàn bộ playlist
-      const playlistWithUrls = songs.map(song => ({
-          ...song,
-          file_url: `http://localhost:3000${song.file_url.replace('/audio', '/media/audio')}`
-      }));
-      playTrack(playlistWithUrls[0], playlistWithUrls, 0); 
+      // 'songs' ở đây đã chứa URL tuyệt đối đã fix
+      playTrack(songs[0], songs, 0); 
     }
   };
 
@@ -75,7 +120,7 @@ const ArtistDetail = () => {
       
       {/* HEADER NGHỆ SĨ */}
       <div className="artist-header">
-        <img src={artist.avatar_url || '/images/default-artist.png'} alt={artist.stage_name} className="artist-avatar-large" />
+        <img src={artist.avatar_url} alt={artist.stage_name} className="artist-avatar-large" />
         <div className="artist-info">
           <p className="artist-type">NGHỆ SĨ</p>
           <h1>{artist.stage_name}</h1>
@@ -104,13 +149,20 @@ const ArtistDetail = () => {
                     <div key={song.id} className="song-row" onClick={() => goToSongDetail(song.id)}>
                         <div className="song-title-col">
                             <span>{index + 1}.</span>
-                            <img src={song.album?.cover_url || '/images/default-album.png'} alt={song.title} />
+                            {/* === SỬA LỖI CLASSNAME === */}
+                            <img 
+                                src={song.image_url || song.album?.cover_url} 
+                                alt={song.title} 
+                                // (Không cần class 'detail-album-cover' ở đây, 
+                                // CSS của .song-title-col img sẽ lo)
+                            />
                             <div>
                                 <p className="song-row-title">{song.title}</p>
                                 <p className="song-row-artist">{artist.stage_name}</p>
                             </div>
                         </div>
-                        <span className="song-play-count">{song.play_count?.toLocaleString() || 0}</span>
+                        {/* === XÓA BỎ LƯỢT NGHE === */}
+                        {/* <span className="song-play-count">{song.play_count?.toLocaleString() || 0}</span> */}
                     </div>
                 ))
             ) : (
@@ -126,9 +178,11 @@ const ArtistDetail = () => {
             {albums.length > 0 ? (
                 albums.map(album => (
                     <div key={album.id} className="album-card-small">
-                        <img src={album.cover_url || '/images/default-album.png'} alt={album.title} />
-                        <p className="album-title-small">{album.title}</p>
-                        <p className="album-year-small">{new Date(album.release_date).getFullYear() || ''}</p>
+                        <img src={album.cover_url} alt={album.title} />
+                        <div className="album-card-info">
+                            <p className="album-title-small">{album.title}</p>
+                            <p className="album-year-small">{new Date(album.release_date).getFullYear() || ''}</p>
+                        </div>
                     </div>
                 ))
             ) : (

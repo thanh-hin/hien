@@ -1,10 +1,10 @@
-// music-frontend/src/utils/api.js (BẢN FINAL ĐÃ SỬA LỖI TOKEN)
+// music-frontend/src/utils/api.js (BẢN FINAL ĐẦY ĐỦ NHẤT)
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:3000'; 
 
-// 1. TẠO INSTANCE AXIOS
-const api = axios.create({
+// 1. TẠO INSTANCE AXIOS (Dùng cho mọi request CẦN TOKEN)
+export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -14,11 +14,8 @@ const api = axios.create({
 // 2. INTERCEPTOR (Tự động gửi Token)
 api.interceptors.request.use(
   (config) => {
-    // Lấy token từ localStorage
     const token = localStorage.getItem('accessToken'); 
-
     if (token) {
-      // Đính kèm token vào header Authorization
       config.headers.Authorization = `Bearer ${token}`; 
     }
     return config;
@@ -28,21 +25,18 @@ api.interceptors.request.use(
   }
 );
 // =====================================
+// === CÁC HÀM GET DỮ LIỆU ===
 
-
-// Hàm lấy Bài hát
 export const fetchSongs = async () => {
   try {
     const response = await api.get('/song'); 
     return response.data;
   } catch (error) {
     console.error('Lỗi khi fetch songs:', error);
-    // Khi lỗi 401 xảy ra (token hết hạn), interceptor sẽ xử lý.
     throw error; 
   }
 };
 
-// Hàm lấy Nghệ sĩ
 export const fetchFeaturedArtists = async () => {
   try {
     const response = await api.get('/artists/featured');
@@ -53,42 +47,166 @@ export const fetchFeaturedArtists = async () => {
   }
 };
 
-// Hàm Login (Trả về toàn bộ data response)
+export const fetchCategories = async () => {
+    try {
+        const response = await api.get('/categories');
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải Thể loại:', error);
+        return [];
+    }
+};
+
+export const fetchSongsByGenre = async (genreName) => {
+    try {
+        const response = await api.get(`/song/genre/${genreName}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải nhạc theo thể loại:', error);
+        return []; 
+    }
+};
+
+export const fetchAllSongs = async (genre, artistId) => {
+    try {
+        const params = new URLSearchParams();
+        if (genre) params.append('genre', genre);
+        if (artistId) params.append('artistId', artistId);
+
+        const response = await api.get(`/song/all?${params.toString()}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải tất cả bài hát:', error);
+        return []; 
+    }
+};
+
+export const fetchAllArtists = async () => {
+    try {
+        const response = await api.get('/artists/all');
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải tất cả nghệ sĩ:', error);
+        return []; 
+    }
+};
+
+
+// === CÁC HÀM AUTH ===
+
 export const loginApi = async (email, password) => {
-  // KHÔNG DÙNG try/catch ở đây để lỗi 401 được ném ra và được AuthContext xử lý
   const response = await api.post('/auth/login', { email, password });
-  
   if (response.data.accessToken) {
     localStorage.setItem('accessToken', response.data.accessToken); 
   }
-  // TRẢ VỀ TOÀN BỘ DATA (chứa accessToken)
   return response.data; 
 };
 
-// Hàm Register
 export const registerApi = async (data) => {
-  // KHÔNG DÙNG try/catch ở đây
   const response = await api.post('/auth/register', data);
   return response.data;
 };
 
-// Hàm Resend OTP
-export const resendOtpApi = async (email) => {
-  const response = await api.post('/auth/resend-otp', { email });
-  return response.data;
-};
+export const verifyOtpApi = (data) => api.post('/auth/verify-otp', data);
+export const resendOtpApi = (data) => api.post('/auth/resend-otp', data);
+export const forgotPasswordApi = (data) => api.post('/auth/forgot-password', data);
+export const resetPasswordOtpApi = (data) => api.post('/auth/reset-password-otp', data);
 
-/* === API LIKE (MỚI) === */
-export const fetchLikedSongs = async () => {
+// === HÀM BỊ THIẾU (ĐỔI MẬT KHẨU) ===
+export const changePasswordApi = async (data) => {
     try {
-        // Dùng 'api' (đã có interceptor) để gửi Token
-        const response = await api.get('/like/my-songs');
+        const response = await api.post('/auth/change-password', data);
         return response.data;
     } catch (error) {
-        console.error('Lỗi khi tải bài hát đã thích:', error);
-        // Nếu lỗi 401 (token hết hạn), interceptor (nếu có) sẽ xử lý
+        console.error('Lỗi khi đổi mật khẩu:', error);
+        throw error;
+    }
+};
+
+// === CÁC HÀM LIKE ===
+export const fetchLikedSongs = async () => {
+    try {
+        const response = await api.get('/like/my-songs');
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải bài hát đã thích:', error);
+        return [];
+    }
+};
+
+// === CÁC HÀM PLAYLIST ===
+export const fetchMyPlaylists = async () => {
+    try {
+        const response = await api.get('/playlists/my-playlists');
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải playlists:', error);
         return [];
     }
 };
 
-export { api };
+export const addSongToPlaylistApi = async (playlistId, songId) => {
+    try {
+        const response = await api.post(`/playlists/${playlistId}/add-song`, { songId: songId });
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi thêm bài hát vào playlist:', error);
+        throw error; 
+    }
+};
+
+export const createPlaylistApi = async (playlistData) => {
+    try {
+        const response = await api.post('/playlists', playlistData); 
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tạo playlist:', error);
+        throw error; 
+    }
+};
+
+// === CÁC HÀM PROFILE (BỊ THIẾU) ===
+export const getMyProfileApi = async () => {
+    try {
+        const response = await api.get('/users/me');
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải profile:', error);
+        throw error;
+    }
+};
+
+export const updateMyProfileApi = async (data) => {
+    try {
+        const response = await api.patch('/users/me', data);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi cập nhật profile:', error);
+        throw error;
+    }
+};
+
+/* === API MỚI: TÌM KIẾM (SEARCH) === */
+export const searchApi = async (query) => {
+    if (!query) return { songs: [], artists: [], albums: [] }; // Không gọi API nếu query rỗng
+    try {
+        // Dùng 'api' (có interceptor) vì API /search là Optional
+        const response = await api.get(`/search?q=${query}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tìm kiếm:', error);
+        return { songs: [], artists: [], albums: [] };
+    }
+};
+
+
+export const requestPasswordResetOtpApi = async () => {
+    try {
+        // endpoint mới của AuthController
+        const response = await api.post('/auth/request-reset-otp'); 
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi yêu cầu OTP (đã đăng nhập):', error);
+        throw error;
+    }
+};

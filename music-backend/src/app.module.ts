@@ -13,6 +13,9 @@ import { ArtistModule } from './artist/artist.module'; // <-- IMPORT MỚI
 import { MailerModule } from '@nestjs-modules/mailer'; // <-- (1) IMPORT
 import { LikeModule } from './like/like.module'; // <-- THÊM DÒNG NÀY
 import { TotpModule } from './totp/totp.module';
+import { CategoryModule } from './category/category.module'; // <-- IMPORT MỚI
+import { PlaylistModule } from './playlist/playlist.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -36,6 +39,9 @@ import { TotpModule } from './totp/totp.module';
     ArtistModule,
     LikeModule,
     TotpModule,
+    CategoryModule,
+    PlaylistModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],

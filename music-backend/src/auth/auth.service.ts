@@ -16,7 +16,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto'; // <-- IMPORT MỚI
 import { ResetPasswordWithOtpDto } from './dto/reset-password-with-otp.dto'; // <-- IMPORT MỚI
-
+import { ChangePasswordDto } from './dto/change-password.dto'; // <-- IMPORT MỚI
 
 @Injectable()
 export class AuthService {
@@ -36,9 +36,9 @@ export class AuthService {
   private async sendOtpEmail(email: string, otpCode: string): Promise<void> {
       try {
           // HIỂN THỊ DỰ PHÒNG TRONG TERMINAL
-          console.log(`\n\n[=== MÃ OTP VÀ KÍCH HOẠT CHO ${email} ===]`);
-          console.log(`MÃ OTP: ${otpCode}`);
-          console.log(`=========================================\n`);
+          // console.log(`\n\n[=== MÃ OTP VÀ KÍCH HOẠT CHO ${email} ===]`);
+          // console.log(`MÃ OTP: ${otpCode}`);
+          // console.log(`=========================================\n`);
 
           await this.mailerService.sendMail({
               to: email,
@@ -131,7 +131,7 @@ export class AuthService {
         if (user.active === 0) {
             throw new UnauthorizedException('Tài khoản của bạn đã bị khóa.');
         } else { // user.active === 2 (đang chờ xác thực)
-            throw new UnauthorizedException('Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để nhận mã OTP.');
+            throw new UnauthorizedException('Tài khoản chưa được kích hoạt. ');
         }
     }
     
@@ -235,7 +235,7 @@ export class AuthService {
     // 3. Gửi EMAIL chứa Mã OTP
     this.sendOtpEmail(user.email, otpCode);
 
-    return { message: 'Mã OTP đặt lại mật khẩu được gửi đến email của bạn.' };
+    return { message: 'Mã OTP được gửi đến email của bạn.' };
   }
   
   // ===============================================
@@ -279,5 +279,66 @@ export class AuthService {
     await this.userRepository.save(user);
 
     return { message: 'Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập.' };
+  }
+
+  /**
+   * 7. HÀM MỚI: ĐỔI MẬT KHẨU (Khi đã đăng nhập)
+   */
+  async changePassword(userId: number, changePasswordDto: ChangePasswordDto): Promise<{ message: string }> {
+    const { oldPassword, newPassword } = changePasswordDto;
+
+    const user = await this.userRepository
+        .createQueryBuilder('user')
+        .addSelect('user.password')
+        .where('user.id = :userId', { userId })
+        .getOne();
+
+    if (!user) {
+        throw new NotFoundException('Không tìm thấy người dùng.');
+    }
+
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+        throw new UnauthorizedException('Mật khẩu cũ không chính xác.');
+    }
+
+    const salt = await bcrypt.genSalt();
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await this.userRepository.save(user);
+    
+    return { message: 'Đổi mật khẩu thành công.' };
+  }
+
+  /**
+   * 8. HÀM MỚI: Yêu cầu OTP đổi pass (Khi ĐÃ ĐĂNG NHẬP)
+   * Sẽ gửi OTP đến email của user đang được JWT token xác thực.
+   */
+  async requestPasswordResetOtp(userId: number): Promise<{ message: string }> {
+    // 1. Tìm user bằng ID
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    // 2. Nếu user không tồn tại hoặc bị cấm (active=0)
+    if (!user || user.active === 0) {
+      throw new NotFoundException('Không thể xử lý yêu cầu cho người dùng này.');
+    }
+
+    // 3. Tạo OTP mới và lưu vào cột (sử dụng lại cột cũ)
+    const otpCode = this.totpService.generateOtp();
+    const expiryTime = this.totpService.getExpiryTime(); // Hạn 5 phút
+
+    user.verification_token = otpCode;
+    user.otp_expiry = expiryTime;
+    
+    // Đảm bảo user ở trạng thái chờ (active=2) để OTP có hiệu lực
+    // (Nếu user đã active=1, OTP vẫn có tác dụng)
+    if (user.active === 0) user.active = 2; // Nếu bị inactive thì chuyển sang pending
+
+    await this.userRepository.save(user);
+
+    // 4. Gửi mail OTP (dùng hàm sendOtpEmail đã có)
+    await this.sendOtpEmail(user.email, otpCode);
+
+    return { message: `Đã gửi mã OTP đến email ${user.email}.` };
   }
 }

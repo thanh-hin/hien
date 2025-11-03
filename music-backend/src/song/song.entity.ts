@@ -39,6 +39,13 @@ export class Song {
   @UpdateDateColumn()
   updated_at: Date;
 
+  // === THÊM CỘT MỚI ===
+  @Column({ length: 50, nullable: true })
+  genre: string;
+
+  @Column({ length: 255, nullable: true, name: 'image_url' })
+  image_url: string;
+
   // Quan hệ: Nhiều Song thuộc 1 Album (Album có thể null)
   @ManyToOne(() => Album, (album) => album.songs, { 
     nullable: true, 

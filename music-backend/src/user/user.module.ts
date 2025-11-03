@@ -1,16 +1,19 @@
-// src/user/user.module.ts
-import { Module } from '@nestjs/common';
-import { UserService } from './user.service';
-import { UserController } from './user.controller';
+// music-backend/src/user/user.module.ts (BẢN SỬA LỖI FINAL)
+import { Module, forwardRef } from '@nestjs/common'; // <-- (1) IMPORT forwardRef
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user.entity';
+import { UserService } from './user.service';
+import { UserController } from './user.controller';
+import { AuthModule } from '../auth/auth.module'; // <-- (2) IMPORT AUTHMODULE
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]) // Đăng ký UserEntity
+    TypeOrmModule.forFeature([User]),
+    // (3) SỬ DỤNG forwardRef ĐỂ TRÁNH VÒNG LẶP
+    forwardRef(() => AuthModule), 
   ],
-  controllers: [UserController],
   providers: [UserService],
-  exports: [UserService, TypeOrmModule] // Export Service và TypeOrm
+  controllers: [UserController],
+  exports: [UserService], 
 })
 export class UserModule {}

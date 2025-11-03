@@ -1,60 +1,49 @@
-// music-backend/src/user/user.entity.ts
+// music-backend/src/user/user.entity.ts (BẢN SỬA LỖI CRASH 500)
 import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
-  UpdateDateColumn, 
-  ManyToOne, 
-  OneToOne, 
-  JoinColumn,
-  OneToMany
+  Entity, PrimaryGeneratedColumn, Column, 
+  ManyToOne, OneToOne, JoinColumn, OneToMany, 
+  CreateDateColumn, UpdateDateColumn 
 } from 'typeorm';
 import { Role } from '../role/role.entity';
 import { Artist } from '../artist/artist.entity';
-import { UserLikedSongs } from '../like/user-liked-songs.entity'; // <-- THÊM DÒNG NÀY
+import { UserLikedSongs } from '../like/user-liked-songs.entity';
+import { Playlist } from '../playlist/playlist.entity';
+// (XÓA: import { Post } from '../post/post.entity';)
 
 @Entity('User')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 50, unique: true })
+  @Column({ length: 100, unique: true })
   username: string;
 
-  @Column({ type: 'varchar', length: 100, unique: true })
+  @Column({ length: 100, unique: true })
   email: string;
 
-  // === DÒNG GÂY LỖI NẰM Ở ĐÂY ===
-  @Column({ type: 'varchar', length: 255, select: false }) // 'select: false' giấu password
+  @Column({ length: 255, select: false }) // select: false (không trả về pass)
   password: string;
-  // =============================
 
-  // === SỬA DÒNG NÀY ===
-  @Column({ type: 'tinyint', default: 2 }) // Sử dụng 'tinyint' hoặc 'int' cho các giá trị 0, 1, 2
-  active: number; // <-- Đổi kiểu thành number
+  @Column({ type: 'tinyint', default: 2 }) // 0=Banned, 1=Active, 2=Pending
+  active: number; 
 
-  // === CỘT MỚI: DÙNG CHO MÃ OTP ===
-// === THÊM name: 'verification_token' ===
-  @Column({ type: 'varchar', length: 255, nullable: true, select: false, name: 'verification_token' }) 
-  verification_token: string | null; 
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false }) 
+  verification_token: string | null; // Mã OTP
 
-  // === THÊM name: 'otp_expiry' ===
-  @Column({ type: 'datetime', nullable: true, select: false, name: 'otp_expiry' }) 
-  otp_expiry: Date | null;
-    // =================================
+  @Column({ type: 'datetime', nullable: true, select: false }) 
+  otp_expiry: Date | null; // Hạn OTP
 
-  // ... (gender, birth_year) ...
-  @Column({ 
-    type: 'enum', 
-    enum: ['male', 'female', 'other', 'prefer not to say'],
-    default: 'prefer not to say' 
-  })
-  gender: 'male' | 'female' | 'other' | 'prefer not to say';
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false, name: 'reset_password_token' }) 
+  reset_password_token: string | null;
 
-  @Column({ type: 'year', nullable: true })
+  @Column({ type: 'datetime', nullable: true, select: false, name: 'reset_password_expires' })
+  reset_password_expires: Date | null;
+
+  @Column({ length: 20, default: 'prefer not to say' })
+  gender: string;
+
+  @Column({ type: 'int', nullable: true })
   birth_year: number | null;
-
 
   @CreateDateColumn()
   created_at: Date;
@@ -62,13 +51,23 @@ export class User {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @ManyToOne(() => Role, (role) => role.users, { eager: true }) 
+  // === CÁC MỐI QUAN HỆ ===
+
+  @ManyToOne(() => Role, role => role.users)
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
   @OneToOne(() => Artist, (artist) => artist.user)
-  artist: Artist;
+  artist: Artist; 
 
-  @OneToMany(() => UserLikedSongs, (likedSong) => likedSong.user)
-  likedSongs: UserLikedSongs[]; // <-- THÊM DÒNG NÀY
+  @OneToMany(() => UserLikedSongs, (like) => like.user)
+  likedSongs: UserLikedSongs[];
+
+  @OneToMany(() => Playlist, playlist => playlist.user)
+  playlists: Playlist[]; 
+
+  // === (4 DÒNG NÀY GÂY LỖI - ĐÃ XÓA) ===
+  // @OneToMany(() => Post, post => post.author)
+  // posts: Post[];
+  // ==================================
 }

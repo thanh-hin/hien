@@ -1,4 +1,4 @@
-// music-backend/src/main.ts
+// music-backend/src/main.ts (BẢN SỬA LỖI FINAL)
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common'; 
@@ -8,6 +8,7 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // (1) Cấu hình CORS chung (Cho API VÀ FILE TĨNH)
   app.enableCors({
     origin: ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
@@ -15,16 +16,12 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe());
 
-  // === CẤU HÌNH PHỤC VỤ FILE TĨNH (FIX LỖI 404) ===
-  // Vấn đề: File nhạc nằm ở music-frontend/public
-  
-  // __dirname hiện tại là thư mục 'dist' (khi chạy start:dev)
-  // Chúng ta phải đi: /dist -> .. (music-backend) -> .. -> music-frontend/public
+  // (2) Cấu hình phục vụ file tĩnh
   const frontendPublicPath = join(__dirname, '..', '..', 'music-frontend', 'public');
 
   app.useStaticAssets(frontendPublicPath, {
-    prefix: '/media', // URL để truy cập file
-    // Thêm cấu hình setHeaders để fix lỗi Content-Type cho file MP3
+    prefix: '/media', 
+    // cors: true, // <-- XÓA DÒNG NÀY (BỊ LỖI)
     setHeaders: (res, path, stat) => {
         if (path.endsWith('.mp3') || path.endsWith('.m4a')) {
             res.set('Content-Type', 'audio/mpeg');
@@ -32,12 +29,16 @@ async function bootstrap() {
     },
   });
   
-  // Cấu hình cho thư mục uploads (nếu có)
+  // (Cấu hình uploads)
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads', 
+    // cors: true, // <-- XÓA DÒNG NÀY (BỊ LỖI)
   });
-  // ====================================================
 
   await app.listen(3000);
+
+  app.enableCors({
+  origin: 'http://localhost:5173',
+});
 }
 bootstrap();

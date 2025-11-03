@@ -1,4 +1,4 @@
-// music-frontend/src/components/PlayerBar.jsx (BẢN NÂNG CẤP NEXT/PREVIOUS)
+// music-frontend/src/components/PlayerBar.jsx (BẢN SỬA LỖI ẢNH BÀI HÁT)
 import React, { useEffect } from 'react'; 
 import { usePlayer } from '../context/PlayerContext';
 import AudioPlayer from 'react-h5-audio-player'; 
@@ -14,19 +14,22 @@ import {
 import { HiVolumeUp } from 'react-icons/hi';
 
 const PlayerBar = () => {
-  // (1) LẤY THÊM CÁC HÀM MỚI
+  // LẤY audioRef TỪ CONTEXT
   const { 
     currentTrack, isPlaying, setIsPlaying, audioRef, 
     currentPlaylist, playNext, playPrevious 
   } = usePlayer(); 
 
-  // (useEffect điều khiển Play/Pause giữ nguyên)
+  // LOGIC ĐIỀU KHIỂN PLAYER TỪ CONTEXT
   useEffect(() => {
     if (audioRef.current && audioRef.current.audio.current) {
       const audio = audioRef.current.audio.current;
+      
+      // KIỂM TRA QUAN TRỌNG: Nếu src đã được cập nhật
       if (currentTrack?.file_url && audio.src !== currentTrack.file_url) {
         audio.load(); 
       }
+      
       if (isPlaying) {
         audio.play();
       } else {
@@ -44,16 +47,16 @@ const PlayerBar = () => {
     next: <IoPlaySkipForwardSharp size={22} />,
   };
 
-  // (2) HÀM XỬ LÝ KHI BÀI HÁT KẾT THÚC
+  // Xử lý khi bài hát kết thúc
   const handleNextOnEnd = () => {
-    if (currentPlaylist.length > 1) { // Chỉ next nếu playlist có nhiều hơn 1 bài
+    if (currentPlaylist.length > 1) { 
         playNext();
     } else {
         setIsPlaying(false);
     }
   };
 
-  // (3) HÀM XỬ LÝ KHI CLICK NÚT NEXT/PREVIOUS TRÊN PLAYER
+  // Nút Next/Previous trên Player Bar
   const handleNextClick = () => {
     if (currentPlaylist.length > 0) playNext();
   };
@@ -63,15 +66,16 @@ const PlayerBar = () => {
 
   return (
     <div className={`player-bar-container ${!isReady ? 'empty' : ''}`}>
-      {/* ... (Thông tin bài hát giữ nguyên) ... */}
       {/* 1. Thông tin bài hát */}
       <div className="player-track-info">
         {isReady ? (
           <>
+            {/* === SỬA LỖI LOGIC ẢNH TẠI ĐÂY === */}
             <img 
-              src={currentTrack.album?.cover_url || '/images/default-album.png'} 
+              src={currentTrack.image_url || currentTrack.album?.cover_url || '/images/default-album.png'} 
               alt={currentTrack.title} 
             />
+            {/* ================================== */}
             <div>
               <p className="title">{currentTrack.title}</p>
               <p className="artist">{currentTrack.artist?.stage_name || 'Nghệ sĩ'}</p>
@@ -82,26 +86,23 @@ const PlayerBar = () => {
         )}
       </div>
       
-      
+      {/* 2. Trình phát nhạc */}
       {isReady && (
         <AudioPlayer
           ref={audioRef} 
           className="audio-player-core"
-          src={currentTrack.file_url} 
+          src={currentTrack.file_url} // URL nhạc đã được fix ở (Home.jsx/SongDetail.jsx)
           showSkipControls={true} 
           showJumpControls={false} 
           customIcons={customIcons} 
           onPlay={() => setIsPlaying(true)} 
           onPause={() => setIsPlaying(false)} 
-          
-          // (4) GÁN CÁC HÀM MỚI VÀO PLAYER
           onEnded={handleNextOnEnd} 
           onClickNext={handleNextClick} 
           onClickPrevious={handlePreviousClick} 
         />
       )}
       
-      {/* ... (Điều khiển Âm lượng giữ nguyên) ... */}
       {/* 3. Điều khiển Âm lượng */}
       {isReady && (
         <div className="player-volume-controls">

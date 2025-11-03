@@ -49,4 +49,13 @@ export class ArtistService {
       }
     });
   }
+
+  async findAllArtists(): Promise<Artist[]> {
+    return this.artistRepository.find({
+      where: { active: true },
+      order: { stage_name: 'ASC' }, // Sắp xếp A-Z
+    });
+  }
+
+  
 }

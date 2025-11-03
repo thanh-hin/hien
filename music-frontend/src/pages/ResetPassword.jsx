@@ -74,7 +74,8 @@ const ResetPassword = () => {
             <>
               {error && <p className="error-message-general">{error}</p>}
               
-              <p className="sub-text">Đặt lại mật khẩu cho: <strong>{email}</strong></p>
+              <p className="sub-text">Đặt lại mật khẩu cho: <span className="email-highlight">{email}</span>
+</p>
 
               <input
                 type="text"

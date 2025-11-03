@@ -1,112 +1,131 @@
-/* music-frontend/src/pages/LikedSongsPage.css (TẠO MỚI) */
+/* music-frontend/src/pages/LikedSongsPage.css */
 
+/* Container tổng */
 .liked-songs-container {
   padding-bottom: 50px;
+  color: var(--color-text-primary);
 }
 
-/* Header (Nơi có trái tim lớn) */
+/* Header Playlist */
 .playlist-header {
-    display: flex;
-    align-items: flex-end;
-    padding: 40px 20px 20px 20px;
-    background: linear-gradient(155deg, #5b5a5c 0%, #000000 100%);
-    margin-bottom: 30px;
-    min-height: 300px;
-}
-.playlist-cover-art {
-  width: 250px;
-  height: 250px;
-  background-color: var(--color-surface);
   display: flex;
-  justify-content: center;
-  align-items: center;
-  color: var(--color-accent);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
-  margin-right: 30px;
-  border-radius: 10px;
+  align-items: flex-end;
+  padding: 40px 20px;
+  background: linear-gradient(160deg, #3a3a3a 0%, #000000 100%);
+  margin-bottom: 30px;
+  min-height: 200px;
+  border-radius: 8px;
+}
+
+/* Thông tin Playlist */
+.playlist-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .playlist-info h1 {
-  font-size: 60px;
+  font-size: 48px;
   font-weight: 900;
-  margin: 0 0 15px 0;
+  margin: 0 0 10px 0;
+  text-transform: capitalize;
 }
 
 .playlist-type {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--color-text-primary);
-  margin-bottom: 8px;
+  color: var(--color-text-secondary);
+  margin-bottom: 5px;
 }
 
 .playlist-owner {
   color: var(--color-text-secondary);
-  font-size: 16px;
-  margin-bottom: 25px;
+  font-size: 14px;
 }
 
+/* Nút Play */
 .playlist-play-button {
   background-color: var(--color-accent);
   color: var(--color-black);
   border: none;
-  padding: 14px 28px;
+  padding: 12px 26px;
   border-radius: 500px;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
-  transition: transform 0.2s;
-}
-.playlist-play-button:hover {
-    transform: scale(1.05);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  margin-top: 20px;
 }
 
-/* Danh sách bài hát (Copy từ ArtistDetail.css) */
+.playlist-play-button:hover {
+  transform: scale(1.05);
+  background-color: #1ed760; /* xanh Spotify */
+}
+
+/* Danh sách bài hát */
 .song-list-detail {
-    margin-top: 20px;
+  margin-top: 20px;
 }
+
 .song-row {
-    display: grid; /* Dùng Grid để chia cột */
-    grid-template-columns: 4fr 2fr 1fr; /* Tên | Album | Icon */
-    align-items: center;
-    padding: 10px 15px;
-    border-radius: 6px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Viền mờ */
-    cursor: pointer;
+  display: grid;
+  grid-template-columns: 4fr 2fr 1fr;
+  align-items: center;
+  padding: 10px 15px;
+  border-radius: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
+
 .song-row:hover {
-    background-color: var(--color-surface-hover);
+  background-color: var(--color-surface-hover);
 }
+
+/* Cột Tên bài hát */
 .song-title-col {
-    display: flex;
-    align-items: center;
-    gap: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
+
 .song-title-col img {
-    width: 40px;
-    height: 40px;
-    border-radius: 4px;
+  width: 45px;
+  height: 45px;
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
+
 .song-row-title {
-    font-weight: 500;
-    margin: 0;
-    color: var(--color-text-primary);
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text-primary);
 }
+
 .song-row-artist {
-    color: var(--color-text-secondary);
-    font-size: 13px;
-    margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  margin: 0;
 }
+
+/* Cột Album */
 .song-album-col {
-    color: var(--color-text-secondary);
-    font-size: 14px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
 }
+
+/* Cột Icon Like (ẩn trái tim) */
 .song-row-liked {
-    color: var(--color-accent); /* Luôn luôn "thích" */
-    justify-self: center;
+  display: none;
 }
+
+/* Text phụ */
 .subtle-text {
-    color: var(--color-text-secondary);
-    font-style: italic;
-    padding-left: 15px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding-left: 15px;
+  margin-top: 10px;
+  display: block;
 }

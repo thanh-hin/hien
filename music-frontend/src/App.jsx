@@ -1,4 +1,4 @@
-// music-frontend/src/App.jsx (FULL CODE)
+// music-frontend/src/App.jsx (FULL CODE SỬA LỖI FINAL)
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
@@ -6,18 +6,26 @@ import { Routes, Route } from 'react-router-dom';
 import MainAppLayout from './components/MainAppLayout'; 
 import AdminRoute from './components/AdminRoute'; 
 import ProtectedRoute from './components/ProtectedRoute'; // <-- (1) IMPORT GUARD
+import ProfileLayout from './pages/ProfileUser/ProfileLayout'; // <-- (2) IMPORT LAYOUT MỚI
 
 // Import Trang
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyOtp from './pages/VerifyOtp';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import AdminPage from './pages/AdminPage';
 import SongDetail from './pages/SongDetail'; 
 import ArtistDetail from './pages/ArtistDetail'; 
-import VerifyOtp from './pages/VerifyOtp'; 
-import ForgotPassword from './pages/ForgotPassword'; 
-import ResetPassword from './pages/ResetPassword';
-import LikedSongsPage from './pages/LikedSongsPage'; // <-- (2) IMPORT TRANG MỚI
+import LikedSongsPage from './pages/LikedSongsPage';
+import GenreDetailPage from './pages/GenreDetailPage';
+import AllSongsPage from './pages/AllSongsPage'; 
+import AllArtistsPage from './pages/AllArtistsPage'; 
+
+// (3) IMPORT CÁC TRANG CON CỦA PROFILE
+import ProfileInfo from './pages/ProfileUser/ProfileInfo';
+import ProfilePlaylists from './pages/ProfileUser/ProfilePlaylists';
 
 function App() {
   return (
@@ -34,15 +42,25 @@ function App() {
         <Route index element={<Home />} /> 
         <Route path="song/:id" element={<SongDetail />} /> 
         <Route path="artist/:id" element={<ArtistDetail />} /> 
+        <Route path="genre/:genreName" element={<GenreDetailPage />} /> 
+        <Route path="songs" element={<AllSongsPage />} />
+        <Route path="artists" element={<AllArtistsPage />} />
         <Route path="blog" element={<div>Trang Blog (Sắp ra mắt)</div>} />
 
-        {/* (3) ROUTE BẢO VỆ (CẦN LOGIN) */}
+        {/* (4) ROUTE BẢO VỆ (CẦN LOGIN) */}
         <Route element={<ProtectedRoute />}>
             <Route path="liked-songs" element={<LikedSongsPage />} />
+            {/* (5) ROUTE PROFILE MỚI (LỒNG NHAU) */}
+            <Route path="profile" element={<ProfileLayout />}>
+                <Route index element={<ProfileInfo />} />
+                <Route path="info" element={<ProfileInfo />} />
+                <Route path="likes" element={<LikedSongsPage />} />
+                <Route path="playlists" element={<ProfilePlaylists />} />
+            </Route>
         </Route>
       </Route>
       
-      {/* 3. ROUTE ADMIN (BẢO VỆ RIÊNG) */}
+      {/* 3. ROUTE ADMIN (BẢO VỆ RIÊNG - ĐÃ ĐƯA RA NGOÀI) */}
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminPage />} />
       </Route>

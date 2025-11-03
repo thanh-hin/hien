@@ -1,8 +1,12 @@
 // music-backend/src/auth/auth.controller.ts (FULL CODE - OTP ENDPOINTS)
 import { 
   Controller, Post, Body, ValidationPipe, 
-  BadRequestException 
-} from '@nestjs/common'; 
+  Get, Query, Redirect, BadRequestException,
+  UseGuards, // <-- (1) IMPORT UseGuards
+  Req // <-- (2) IMPORT Req
+} from '@nestjs/common';
+import { JwtPayload } from './jwt.strategy';
+import { AuthGuard } from '@nestjs/passport'; // <-- IMPORT MỚI
 
 import { AuthService } from './auth.service';
 import { RegisterAuthDto } from './dto/register-auth.dto';
@@ -11,6 +15,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto'; // <-- IMPORT DTO MỚI
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto'; // <-- IMPORT MỚI
 import { ResetPasswordWithOtpDto } from './dto/reset-password-with-otp.dto'; // <-- IMPORT MỚI
+import { ChangePasswordDto } from './dto/change-password.dto'; // <-- IMPORT MỚI
 
 @Controller('auth') 
 export class AuthController {
@@ -58,5 +63,27 @@ export class AuthController {
   resetPassword(@Body() resetPasswordDto: ResetPasswordWithOtpDto) {
     // Trả về { message: 'Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập.' }
     return this.authService.resetPasswordOtp(resetPasswordDto);
+  }
+/**
+   * ENDPOINT MỚI: POST /auth/change-password (Đổi pass khi đã login)
+   */
+  @UseGuards(AuthGuard('jwt')) 
+  @Post('/change-password')
+  async changePassword(
+    @Req() req: any,
+    @Body(ValidationPipe) changePasswordDto: ChangePasswordDto
+  ) {
+    const userId = (req.user as JwtPayload).userId;
+    return this.authService.changePassword(userId, changePasswordDto);
+  }
+  
+  /**
+   * ENDPOINT MỚI: POST /auth/request-reset-otp (Khi đã đăng nhập)
+   */
+  @UseGuards(AuthGuard('jwt')) 
+  @Post('/request-reset-otp')
+  async requestResetOtp(@Req() req: any) {
+    const userId = (req.user as JwtPayload).userId;
+    return this.authService.requestPasswordResetOtp(userId);
   }
 }

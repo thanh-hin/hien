@@ -153,3 +153,7 @@
   color: var(--color-accent);
   text-decoration: underline;
 }
+
+.email-highlight {
+  color: rgb(129, 129, 129);
+}

@@ -1,46 +1,85 @@
-// music-backend/src/song/song.controller.ts
-
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
-// === SỬA DÒNG NÀY (THÊM type) ===
+// music-backend/src/song/song.controller.ts (BẢN SỬA LỖI 400 BAD REQUEST)
+import { 
+  Controller, Get, Post, Body, 
+  UseGuards, Req, 
+  Param, ParseIntPipe, NotFoundException, 
+  Query, 
+  UseInterceptors, UploadedFile 
+} from '@nestjs/common';
 import type { Request } from 'express'; 
-// =================================
 import { SongService } from './song.service';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard'; 
-import { JwtPayload } from '../auth/jwt.strategy'; 
-import { NotFoundException, Param, ParseIntPipe } from '@nestjs/common'; // <-- Thêm
+import { JwtPayload } from '../auth/jwt.strategy';
+import { AuthGuard } from '@nestjs/passport'; 
+import { Roles } from '../auth/roles.decorator'; 
+import { RolesGuard } from '../auth/roles.guard'; 
+import { FileInterceptor } from '@nestjs/platform-express'; 
 
 @Controller('song') 
 export class SongController {
   constructor(private readonly songService: SongService) {}
 
+  /**
+   * API: GET /song (Lấy 5 bài hát cho Trang Home)
+   */
   @Get()
   @UseGuards(OptionalJwtAuthGuard) 
-  // Lỗi sẽ hết sau khi import type Request
   findAll(@Req() req: Request) { 
     const user: JwtPayload | null = (req as any).user as JwtPayload | null;
     return this.songService.findAll(user);
   }
 
-  // API LẤY CHI TIẾT BÀI HÁT
+  /**
+   * API: GET /song/all (Lấy TẤT CẢ bài hát, có lọc)
+   */
+  @Get('all')
+  @UseGuards(OptionalJwtAuthGuard)
+  findAllWithFilters(
+    @Query('genre') genre?: string, 
+    
+    // === SỬA LỖI 400: Dùng ParseIntPipe và 'optional: true' ===
+    @Query('artistId', new ParseIntPipe({ optional: true })) 
+    artistId?: number, 
+    // =========================================================
+  ) {
+    return this.songService.findAllWithFilters(genre, artistId);
+  }
+
+  /**
+   * API: GET /song/:id (Lấy chi tiết 1 bài hát)
+   */
   @Get(':id') 
-  // Không cần @UseGuards vì SongDetail.jsx sẽ dùng axios để gọi
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const song = await this.songService.findOne(id);
     if (!song) {
-        // Ném lỗi 404 nếu không tìm thấy, để Frontend xử lý chuyển hướng
         throw new NotFoundException(`Bài hát với ID ${id} không tồn tại`);
     }
     return song;
   }
   
-  // === (4) API MỚI: GET /song/:id/lyrics ===
+  /**
+   * API: GET /song/:id/lyrics (Lấy lời bài hát)
+   */
   @Get(':id/lyrics')
   async findLyrics(@Param('id', ParseIntPipe) id: number) {
     const lyrics = await this.songService.findLyrics(id);
     if (!lyrics) {
       throw new NotFoundException(`Không tìm thấy lời cho bài hát ID ${id}`);
     }
-    return lyrics; // Chỉ trả về object lyrics (chứa .lyrics)
+    return lyrics;
   }
-}
 
+  /**
+   * API: GET /song/genre/:genreName (Lấy bài hát theo thể loại)
+   */
+  @Get('genre/:genreName')
+  @UseGuards(OptionalJwtAuthGuard) 
+  async findByGenre(@Param('genreName') genreName: string) {
+    const songs = await this.songService.findByGenre(genreName);
+    if (!songs || songs.length === 0) {
+        throw new NotFoundException(`Không tìm thấy bài hát nào thuộc thể loại: ${genreName}`);
+    }
+    return songs;
+  }
+
+}

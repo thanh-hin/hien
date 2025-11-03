@@ -1,25 +1,17 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: center; }
-        .container { background-color: #ffffff; padding: 30px; border-radius: 8px; max-width: 500px; margin: 0 auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { color: #1ED760; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
-        .code { font-size: 36px; color: #333333; margin: 25px 0; padding: 10px 20px; background-color: #e6ffe6; border-radius: 4px; display: inline-block; letter-spacing: 5px; }
-        .footer { font-size: 12px; color: #777; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">{{appName}} 🎵</div>
-        <h2>Xác nhận Email của bạn</h2>
-        <p>Cảm ơn bạn đã đăng ký! Vui lòng sử dụng mã xác nhận sau để kích hoạt tài khoản của bạn:</p>
-        
-        <div class="code">{{otpCode}}</div>
-        
-        <p>Mã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này.</p>
-        
-        <p class="footer">Bạn nhận được email này vì đã đăng ký tài khoản trên {{appName}}.</p>
+  <head>
+    <meta charset="utf-8" />
+    <title>Xác thực OTP</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+    <div style="max-width: 500px; background: white; margin: auto; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <h2 style="color: #333;">Xin chào, {{username}}!</h2>
+      <p style="font-size: 16px;">Mã OTP của bạn là:</p>
+      <div style="font-size: 28px; font-weight: bold; color: #ff4d4f; text-align: center; margin: 20px 0;">
+        {{otp}}
+      </div>
+      <p style="font-size: 14px; color: #555;">Mã này có hiệu lực trong 5 phút. Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
     </div>
-</body>
+  </body>
 </html>

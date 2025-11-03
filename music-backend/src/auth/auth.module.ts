@@ -1,10 +1,12 @@
-// music-backend/src/auth/auth.module.ts (CODE ĐÃ SỬA LỖI MAILER DEPENDENCY)
-import { Module } from '@nestjs/common';
+// music-backend/src/auth/auth.module.ts (BẢN SỬA LỖI FINAL)
+import { Module, forwardRef } from '@nestjs/common'; // <-- THÊM forwardRef
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt'; 
-import { MailerModule } from '@nestjs-modules/mailer'; // <-- (1) IMPORT MAILER
+import { TotpModule } from '../totp/totp.module'; // <-- (1) IMPORT TOTP
+import { SharedModule } from '../shared/shared.module'; // <-- (2) IMPORT SHARED (chứa Mailer)
 
+// Imports Entity và DTO
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserModule } from '../user/user.module'; 
@@ -12,26 +14,28 @@ import { RoleModule } from '../role/role.module';
 import { User } from '../user/user.entity';
 import { Role } from '../role/role.entity';
 import { JwtStrategy } from './jwt.strategy'; 
-import { SharedModule } from '../shared/shared.module';
-import { TotpModule } from '../totp/totp.module'; // <-- IMPORT MỚI
 
 @Module({
   imports: [
-    UserModule, 
+    // Phá vỡ vòng lặp (Circular Dependency) với UserModule
+    forwardRef(() => UserModule), 
+    
     RoleModule, 
     TypeOrmModule.forFeature([User, Role]),
-
-    SharedModule,
-    TotpModule,
+    
+    // === (3) THÊM 2 MODULE BỊ THIẾU VÀO ĐÂY ===
+    SharedModule, // Module chứa MailerModule đã cấu hình
+    TotpModule,   // Module chứa TotpService
+    // ======================================
 
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: 'my_super_secure_lame_secret_12345', 
+      secret: 'my_super_secure_lame_secret_12345', // (Phải khớp với jwt.strategy.ts)
       signOptions: { expiresIn: '1d' },
     }),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy], 
-  exports: [JwtModule, PassportModule], 
+  exports: [AuthService, PassportModule, JwtModule], 
 })
 export class AuthModule {}

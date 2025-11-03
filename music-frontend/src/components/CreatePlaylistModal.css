@@ -1,0 +1,159 @@
+/* ===== Overlay ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+/* ===== Modal box ===== */
+.modal-content {
+  background: #121212;
+  color: #f2f2f2;
+  width: 460px;
+  border-radius: 18px;
+  padding: 28px 32px;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.3s ease-in-out;
+  box-sizing: border-box;
+}
+
+/* ===== Close button ===== */
+.modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.modal-close-btn:hover {
+  color: #fff;
+}
+
+/* ===== Title ===== */
+.modal-content h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+  text-align: center;
+  color: #fff;
+}
+
+/* ===== Input field ===== */
+.modal-content input[type="text"] {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #2a2a2a;
+  background: #1a1a1a;
+  color: #f2f2f2;
+  font-size: 1rem;
+  transition: all 0.25s ease;
+  margin-bottom: 18px;
+  box-sizing: border-box;
+}
+
+.modal-content input[type="text"]:focus {
+  border-color: #22c55e;
+  background: #202020;
+  outline: none;
+}
+
+/* ===== Privacy radio ===== */
+.privacy-group {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.privacy-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: #ddd;
+  transition: color 0.2s;
+}
+
+.privacy-group input[type="radio"] {
+  accent-color: #22c55e;
+  transform: scale(1.1);
+}
+
+/* ===== Error ===== */
+.modal-error {
+  color: #ff5b5b;
+  text-align: center;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+/* ===== Button ===== */
+.create-btn {
+  width: 100%;
+  background: #22c55e;
+  color: #111;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.25s ease;
+}
+
+.create-btn:hover:not(:disabled) {
+  background: #27d56b;
+  transform: translateY(-2px);
+}
+
+.create-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== Toast message ===== */
+.toast-message {
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #22c55e;
+  color: #111;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  animation: fadeInToast 0.3s forwards, fadeOutToast 0.3s 2.7s forwards;
+  z-index: 3000;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(25px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeInToast {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes fadeOutToast {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, 20px); }
+}

@@ -1,13 +1,14 @@
 // music-backend/src/song/song.service.ts (CODE CHÍNH XÁC)
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Song } from './song.entity';
 import { JwtPayload } from '../auth/jwt.strategy'; 
 import { Artist } from '../artist/artist.entity'; // <-- Cần import
 import { Lyrics } from '../lyrics/lyrics.entity'; // <-- (1) IMPORT
 import { Album } from '../album/album.entity'; // <-- CẦN
 import { NotFoundException } from '@nestjs/common';
+import { Repository, FindManyOptions } from 'typeorm';
+
 
 @Injectable()
 export class SongService {
@@ -84,4 +85,47 @@ async findAll(user: JwtPayload | null): Promise<Song[]> {
         where: { song_id: songId }, // <-- SỬ DỤNG song_id CHÍNH XÁC
       });
     }
+
+    /**
+   * === HÀM MỚI: Lấy bài hát theo Thể loại ===
+   */
+  async findByGenre(genreName: string): Promise<Song[]> {
+    // Dùng TypeORM để tìm
+    return this.songRepository.find({
+      where: { 
+        genre: genreName, 
+        active: true 
+      },
+      relations: ['artist', 'album'], // Join bảng
+      order: { id: 'DESC' } // Sắp xếp theo ID mới nhất
+    });
+  }
+// === HÀM LẤY TẤT CẢ BÀI HÁT (CÓ LỌC) ===
+  async findAllWithFilters(
+    genre?: string,
+    artistId?: number, // artistId bây giờ là number hoặc undefined
+  ): Promise<Song[]> {
+    
+    // Khởi tạo điều kiện WHERE cơ sở
+    let whereConditions: any = { active: true }; 
+
+    // 1. Thêm lọc Thể loại
+    if (genre && genre !== '') {
+      whereConditions = { ...whereConditions, genre: genre };
+    }
+
+    // 2. Thêm lọc Nghệ sĩ (join artist)
+    // Kiểm tra artistId là number hợp lệ (do ParseIntPipe xử lý)
+    if (artistId !== undefined && artistId !== null) { 
+      whereConditions = { ...whereConditions, artist: { id: artistId } };
+    }
+    
+    const options: FindManyOptions<Song> = {
+      relations: ['artist', 'album'],
+      where: whereConditions, 
+      order: { id: 'DESC' }, 
+    };
+
+    return this.songRepository.find(options);
+  }
 }
