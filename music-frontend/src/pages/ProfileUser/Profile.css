@@ -413,3 +413,86 @@
 .btn-cancel:hover {
   background: #444;
 }
+
+/* (Nó sẽ tự động tái sử dụng .playlist-grid và .playlist-card đã có) */
+
+/* === ProfileFollowing Page CSS === */
+.profile-following-container {
+    padding: 30px 20px;
+    background-color: #121212; /* nền dark */
+    color: #eee; /* chữ sáng */
+    min-height: 100%;
+}
+
+.profile-following-container h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #fff;
+    border-left: 4px solid #ff4c68; /* đỏ/hồng */
+    padding-left: 10px;
+}
+
+/* Grid hiển thị các artist */
+.playlist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+/* Card mỗi nghệ sĩ */
+.playlist-card {
+    background-color: #1e1e1e;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.playlist-card img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s ease;
+}
+
+.playlist-card h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin: 5px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.playlist-card p {
+    font-size: 13px;
+    color: #aaa;
+    margin: 0;
+}
+
+/* Hover hiệu ứng */
+.playlist-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(29, 185, 84, 0.4);
+}
+
+.playlist-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Chú thích khi chưa follow ai */
+.profile-following-container p {
+    color: #777;
+    font-style: italic;
+    text-align: center;
+    margin-top: 20px;
+}

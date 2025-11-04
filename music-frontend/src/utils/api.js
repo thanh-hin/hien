@@ -210,3 +210,36 @@ export const requestPasswordResetOtpApi = async () => {
         throw error;
     }
 };
+
+/* === API MỚI: FOLLOW (CẦN TOKEN) === */
+export const checkFollowStatusApi = async (artistId) => {
+    try {
+        // Dùng 'api' (đã có interceptor)
+        const response = await api.get(`/follow/status/${artistId}`);
+        return response.data; // Trả về { isFollowing: true/false }
+    } catch (error) {
+        console.error('Lỗi khi kiểm tra follow:', error);
+        return { isFollowing: false }; // Mặc định là false nếu lỗi
+    }
+};
+
+export const toggleFollowApi = async (artistId) => {
+    try {
+        const response = await api.post(`/follow/${artistId}`);
+        return response.data; // Trả về { isFollowing: true/false }
+    } catch (error) {
+        console.error('Lỗi khi follow/unfollow:', error);
+        throw error; // Ném lỗi để component bắt
+    }
+};
+
+/* === API MỚI: LẤY DANH SÁCH ĐANG THEO DÕI (CẦN TOKEN) === */
+export const fetchMyFollowingApi = async () => {
+    try {
+        const response = await api.get('/follow/my-following');
+        return response.data; // Trả về mảng [Follow]
+    } catch (error) {
+        console.error('Lỗi khi tải danh sách đang theo dõi:', error);
+        return [];
+    }
+};

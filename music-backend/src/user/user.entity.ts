@@ -9,6 +9,7 @@ import { Artist } from '../artist/artist.entity';
 import { UserLikedSongs } from '../like/user-liked-songs.entity';
 import { Playlist } from '../playlist/playlist.entity';
 // (XÓA: import { Post } from '../post/post.entity';)
+import { Follow } from '../follow/follow.entity'; // <-- Cần import Follow Entity
 
 @Entity('User')
 export class User {
@@ -65,4 +66,14 @@ export class User {
   // @OneToMany(() => Post, post => post.author)
   // posts: Post[];
   // ==================================
+
+  // 1. DANH SÁCH USER MÀ USER NÀY ĐANG THEO DÕI (FOLLOWING)
+    // mapping tới cột follower (Follow.follower)
+    @OneToMany(() => Follow, follow => follow.follower)
+    following: Follow[]; 
+
+    // 2. DANH SÁCH USER ĐANG THEO DÕI USER NÀY (FOLLOWERS)
+    // mapping tới cột following (Follow.following)
+    @OneToMany(() => Follow, follow => follow.following)
+    followers: Follow[];
 }

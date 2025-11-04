@@ -171,3 +171,91 @@
     font-size: 13px;
     margin: 0;
 }
+
+/* === HEADER NGHỆ SĨ DARK MODE === */
+.artist-header {
+    display: flex;
+    align-items: flex-end;
+    padding: 40px 20px 20px 20px;
+    background: linear-gradient(180deg, #0d0d0d 0%, var(--color-background) 100%);
+    margin-bottom: 30px;
+    min-height: 300px;
+}
+
+.artist-avatar-large {
+    width: 250px;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 50%;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
+    margin-right: 30px;
+}
+
+/* Info nghệ sĩ */
+.artist-info h1 {
+    font-size: 72px;
+    font-weight: 900;
+    margin: 0 0 15px 0;
+    color: #fff; /* chữ sáng */
+}
+
+.artist-type {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #ff4c68; /* màu đỏ/hồng */
+    margin-bottom: 8px;
+}
+
+.artist-stats, .artist-bio {
+    color: #ccc; /* chữ sáng cho body nhỏ */
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+/* === Controls: PHÁT TẤT CẢ màu xanh nổi bật === */
+.artist-controls {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+    gap: 20px;
+}
+
+.artist-play-button {
+    background-color: #1db954; /* xanh Spotify */
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 500px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+}
+
+.artist-play-button:hover {
+    background-color: #1ed760; /* hover sáng hơn */
+}
+
+.follow-button {
+    background-color: #333; /* nền tối */
+    color: #ff4c68; /* chữ đỏ/hồng */
+    border: 1px solid #ff4c68;
+    border-radius: 500px;
+    padding: 12px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.follow-button.active {
+    background-color: #ff4c68; /* nền đỏ/hồng khi active */
+    color: #fff; /* chữ trắng */
+}
+
+.follow-button:hover:not(:disabled) {
+    opacity: 0.85;
+}

@@ -1,21 +1,26 @@
 // music-frontend/src/pages/ArtistDetail.jsx (BẢN SỬA LỖI FINAL)
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; 
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../utils/api'; // <-- (1) IMPORT 'api' (CÓ INTERCEPTOR)
+// (1) IMPORT API (ĐẢM BẢO FILE API.JS CỦA BẠN CÓ 3 HÀM NÀY)
+import { api, checkFollowStatusApi, toggleFollowApi } from '../utils/api'; 
 import './ArtistDetail.css'; 
 import { FaPlay, FaHeart } from 'react-icons/fa';
 import { usePlayer } from '../context/PlayerContext'; 
+import { useAuth } from '../context/AuthContext'; 
 
 const ArtistDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { playTrack } = usePlayer();
+  const { isAuthenticated } = useAuth(); 
   
   const [artist, setArtist] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false); 
 
-  // Hàm tính tuổi an toàn
   const calculateAge = (birthYear) => {
     if (!birthYear) return 'Không rõ';
     const year = parseInt(birthYear);
@@ -23,7 +28,23 @@ const ArtistDetail = () => {
     return new Date().getFullYear() - year;
   };
 
-  // === CHỈ DÙNG 1 useEffect ĐỂ TẢI DATA ===
+  // (Hàm helper fix URL - Rất quan trọng)
+  const fixUrl = (url, type = 'image') => {
+      if (!url) { 
+          if (type === 'artist') return '/images/default-artist.png';
+          if (type === 'audio') return ''; 
+          return '/images/default-album.png'; 
+      }
+      if (url.startsWith('http')) return url;
+      const prefix = type === 'image' ? '/media/images' : '/media/audio';
+      const originalPath = type === 'image' ? '/images' : '/audio';
+      if (url.startsWith(prefix)) {
+          return `http://localhost:3000${url}`;
+      }
+      return `http://localhost:3000${url.replace(originalPath, prefix)}`;
+  };
+
+  // === (1) useEffect Tải Data (Luôn luôn chạy) ===
   useEffect(() => {
     const loadArtist = async () => {
       setLoading(true);
@@ -32,80 +53,78 @@ const ArtistDetail = () => {
         const response = await api.get(`/artists/${id}`);
         const artistData = response.data;
 
-        // === SỬA LỖI LINK ẢNH/NHẠC (LOGIC AN TOÀN) ===
-        // Hàm helper để fix URL
-        const fixUrl = (url, type = 'image') => {
-            if (!url) { // Xử lý NULL
-                return type === 'image' ? '/images/default-album.png' : '';
-            }
-            if (url.startsWith('http')) { // Nếu đã là URL tuyệt đối
-                return url;
-            }
-            // Mặc định (ví dụ: /images/artist-1.jpg)
-            const prefix = type === 'image' ? '/media/images' : '/media/audio';
-            const originalPath = type === 'image' ? '/images' : '/audio';
-            
-            // Đảm bảo không thay thế 2 lần
-            if (url.startsWith(prefix)) {
-                return `http://localhost:3000${url}`;
-            }
-            
-            return `http://localhost:3000${url.replace(originalPath, prefix)}`;
-        };
-        
-        // 1. Sửa URL Ảnh đại diện (Avatar)
-        artistData.avatar_url = fixUrl(artistData.avatar_url, 'image');
-
-        // 2. Sửa URL cho các Album
+        // (Fix URL cho tất cả ảnh/nhạc)
+        artistData.avatar_url = fixUrl(artistData.avatar_url, 'artist');
         if (artistData.albums) {
             artistData.albums = artistData.albums.map(album => ({
                 ...album,
                 cover_url: fixUrl(album.cover_url, 'image')
             }));
         }
-
-        // 3. Sửa URL cho các Bài hát
         if (artistData.songs) {
             artistData.songs = artistData.songs.map(song => {
-                // Sửa ảnh riêng của bài hát (nếu có)
                 const songImageUrl = song.image_url ? fixUrl(song.image_url, 'image') : null;
-                
+                if (song.album) {
+                    song.album.cover_url = fixUrl(song.album.cover_url, 'image');
+                }
                 return {
                     ...song,
-                    file_url: fixUrl(song.file_url, 'audio'), // Fix file nhạc
-                    image_url: songImageUrl // Gán ảnh đã fix
+                    file_url: fixUrl(song.file_url, 'audio'), 
+                    image_url: songImageUrl 
                 };
             });
         }
-        // ===================================
-
         setArtist(artistData);
       } catch (err) {
-        console.error("Lỗi tải chi tiết nghệ sĩ:", err);
         setError('Không tìm thấy nghệ sĩ này.');
       } finally {
         setLoading(false);
       }
     };
     loadArtist();
-  }, [id]); // Chỉ chạy khi 'id' thay đổi
+  }, [id]); // Chỉ phụ thuộc vào 'id'
 
-  // MẢNG AN TOÀN (Đã có)
-  const songs = artist?.songs || []; 
-  const albums = artist?.albums || []; 
+  // === (2) useEffect KIỂM TRA FOLLOW (ĐÃ SỬA LỖI HOOK) ===
+  useEffect(() => {
+      // (3) ĐƯA LOGIC 'IF' VÀO BÊN TRONG HOOK
+      // Chỉ kiểm tra nếu đã đăng nhập VÀ đã tải xong nghệ sĩ
+      if (isAuthenticated && artist) {
+          const checkStatus = async () => {
+              // 'artist.id' ở đây là ID của nghệ sĩ, không phải ID của user
+              const res = await checkFollowStatusApi(artist.id); 
+              setIsFollowing(res.isFollowing);
+          };
+          checkStatus();
+      } else {
+          setIsFollowing(false); 
+      }
+  }, [isAuthenticated, artist]); // Phụ thuộc vào 'isAuthenticated' và 'artist'
 
-  // LOGIC "PHÁT TẤT CẢ" (Đã fix URL trong useEffect)
+
   const playArtistSongs = () => {
     if (songs.length > 0) { 
-      // 'songs' ở đây đã chứa URL tuyệt đối đã fix
       playTrack(songs[0], songs, 0); 
     }
   };
-
-  // Nút chuyển sang trang chi tiết bài hát
   const goToSongDetail = (songId) => {
       navigate(`/song/${songId}`);
   };
+
+  // (Hàm xử lý nhấn nút Follow)
+  const handleToggleFollow = async () => {
+    if (!isAuthenticated) {
+        navigate('/login');
+        return;
+    }
+    setFollowLoading(true); 
+    try {
+        const response = await toggleFollowApi(artist.id);
+        setIsFollowing(response.isFollowing); 
+    } catch (error) {
+        alert(error.response?.data?.message || 'Đã xảy ra lỗi');
+    }
+    setFollowLoading(false); 
+  };
 
   if (loading) {
     return <div className="artist-detail-loading">Đang tải thông tin nghệ sĩ...</div>;
@@ -114,6 +133,9 @@ const ArtistDetail = () => {
   if (error || !artist) {
     return <div className="artist-detail-error">{error || 'Nghệ sĩ không tồn tại.'}</div>;
   }
+  
+  const songs = artist?.songs || []; 
+  const albums = artist?.albums || []; 
 
   return (
     <div className="artist-detail-container">
@@ -135,10 +157,19 @@ const ArtistDetail = () => {
             <button className="artist-play-button" onClick={playArtistSongs}>
               <FaPlay size={20} /> PHÁT TẤT CẢ
             </button>
-            <button className="icon-button follow-button"><FaHeart size={18} /> THEO DÕI</button>
+            
+            {/* === SỬA NÚT FOLLOW === */}
+            <button 
+                className={`icon-button follow-button ${isFollowing ? 'active' : ''}`}
+                onClick={handleToggleFollow}
+                disabled={followLoading}
+            >
+              <FaHeart size={18} /> 
+              {followLoading ? '...' : (isFollowing ? 'ĐANG THEO DÕI' : 'THEO DÕI')}
+            </button>
           </div>
         </div>
-      </div>
+    </div>
 
       {/* DANH SÁCH BÀI HÁT */}
       <div className="artist-body-section">
@@ -149,20 +180,16 @@ const ArtistDetail = () => {
                     <div key={song.id} className="song-row" onClick={() => goToSongDetail(song.id)}>
                         <div className="song-title-col">
                             <span>{index + 1}.</span>
-                            {/* === SỬA LỖI CLASSNAME === */}
                             <img 
-                                src={song.image_url || song.album?.cover_url} 
-                                alt={song.title} 
-                                // (Không cần class 'detail-album-cover' ở đây, 
-                                // CSS của .song-title-col img sẽ lo)
-                            />
+                                src={song.image_url || song.album?.cover_url} 
+                                alt={song.title} 
+                            />
                             <div>
                                 <p className="song-row-title">{song.title}</p>
                                 <p className="song-row-artist">{artist.stage_name}</p>
                             </div>
                         </div>
-                        {/* === XÓA BỎ LƯỢT NGHE === */}
-                        {/* <span className="song-play-count">{song.play_count?.toLocaleString() || 0}</span> */}
+                        {/* (Đã xóa lượt nghe) */}
                     </div>
                 ))
             ) : (
@@ -185,8 +212,7 @@ const ArtistDetail = () => {
                         </div>
                     </div>
                 ))
-            ) : (
-                <p className="subtle-text">Nghệ sĩ này chưa có album nào.</p>
+            ) : (            <p className="subtle-text">Nghệ sĩ này chưa có album nào.</p>
             )}
         </div>
       </div>

@@ -16,6 +16,7 @@ import { TotpModule } from './totp/totp.module';
 import { CategoryModule } from './category/category.module'; // <-- IMPORT MỚI
 import { PlaylistModule } from './playlist/playlist.module';
 import { SearchModule } from './search/search.module';
+import { FollowModule } from './follow/follow.module'; // <-- IMPORT MỚI
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { SearchModule } from './search/search.module';
     CategoryModule,
     PlaylistModule,
     SearchModule,
+    FollowModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -38,6 +38,12 @@ const ProfileLayout = () => {
               Playlist Của bạn
             </NavLink>
           </li>
+          {/* === (2) TAB MỚI === */}
+          <li>
+            <NavLink to="/profile/following">
+              Đang theo dõi
+            </NavLink>
+          </li>
         </ul>
       </nav>
 

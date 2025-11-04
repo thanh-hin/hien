@@ -26,6 +26,7 @@ import AllArtistsPage from './pages/AllArtistsPage';
 // (3) IMPORT CÁC TRANG CON CỦA PROFILE
 import ProfileInfo from './pages/ProfileUser/ProfileInfo';
 import ProfilePlaylists from './pages/ProfileUser/ProfilePlaylists';
+import ProfileFollowing from './pages/ProfileUser/ProfileFollowing'; // <-- (1) IMPORT MỚI
 
 function App() {
   return (
@@ -56,6 +57,7 @@ function App() {
                 <Route path="info" element={<ProfileInfo />} />
                 <Route path="likes" element={<LikedSongsPage />} />
                 <Route path="playlists" element={<ProfilePlaylists />} />
+                <Route path="following" element={<ProfileFollowing />} /> {/* <-- (2) ROUTE MỚI */}
             </Route>
         </Route>
       </Route>
