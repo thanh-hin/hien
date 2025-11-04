@@ -5,10 +5,13 @@ import { User } from './user.entity';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { AuthModule } from '../auth/auth.module'; // <-- (2) IMPORT AUTHMODULE
+import { Follow } from '../follow/follow.entity';
+import { Playlist } from '../playlist/playlist.entity';
+import { UserLikedSongs } from '../like/user-liked-songs.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Playlist, UserLikedSongs, Follow]),
     // (3) SỬ DỤNG forwardRef ĐỂ TRÁNH VÒNG LẶP
     forwardRef(() => AuthModule), 
   ],

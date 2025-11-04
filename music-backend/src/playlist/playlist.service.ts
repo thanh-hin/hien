@@ -88,4 +88,35 @@ export class PlaylistService {
     playlist.songs.push(song);
     return this.playlistRepository.save(playlist);
   }
+
+  /**
+   * === HÀM MỚI: Tìm playlist theo ID (kèm bài hát) ===
+   */
+  async findPublicById(id: number): Promise<Playlist> {
+    const playlist = await this.playlistRepository.findOne({
+      where: { 
+        id: id,
+        is_active: 1
+      },
+      relations: ['user', 'songs', 'songs.artist', 'songs.album']
+    });
+    
+    if (!playlist) {
+      throw new NotFoundException('Không tìm thấy playlist.');
+    }
+    
+    // Kiểm tra nếu Playlist là Riêng tư
+    if (playlist.is_private === 1) {
+        // (Trong tương lai, bạn có thể check 'userId' (optional auth) ở đây)
+        throw new UnauthorizedException('Bạn không có quyền xem playlist riêng tư này.');
+    }
+
+    // Xóa thông tin nhạy cảm của chủ sở hữu
+    if (playlist.user) {
+      const { password, ...safeUser } = playlist.user;
+      playlist.user = safeUser as User;
+    }
+    
+    return playlist;
+  }
 }

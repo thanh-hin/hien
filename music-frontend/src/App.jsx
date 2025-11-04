@@ -27,6 +27,8 @@ import AllArtistsPage from './pages/AllArtistsPage';
 import ProfileInfo from './pages/ProfileUser/ProfileInfo';
 import ProfilePlaylists from './pages/ProfileUser/ProfilePlaylists';
 import ProfileFollowing from './pages/ProfileUser/ProfileFollowing'; // <-- (1) IMPORT MỚI
+import PublicProfilePage from './pages/ProfileUser/PublicProfilePage'; // <-- (1) IMPORT MỚI
+import PlaylistDetailPage from './pages/PlaylistDetailPage'; // <-- (2) IMPORT MỚI
 
 function App() {
   return (
@@ -47,10 +49,13 @@ function App() {
         <Route path="songs" element={<AllSongsPage />} />
         <Route path="artists" element={<AllArtistsPage />} />
         <Route path="blog" element={<div>Trang Blog (Sắp ra mắt)</div>} />
-
+        <Route path="/profile/:username" element={<PublicProfilePage />} />
+        
         {/* (4) ROUTE BẢO VỆ (CẦN LOGIN) */}
         <Route element={<ProtectedRoute />}>
             <Route path="liked-songs" element={<LikedSongsPage />} />
+{/* === (3) ROUTE MỚI === */}
+        <Route path="playlist/:id" element={<PlaylistDetailPage />} />
             {/* (5) ROUTE PROFILE MỚI (LỒNG NHAU) */}
             <Route path="profile" element={<ProfileLayout />}>
                 <Route index element={<ProfileInfo />} />

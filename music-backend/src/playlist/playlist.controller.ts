@@ -3,12 +3,14 @@ import {
   Controller, Post, Get, Body, 
   UseGuards, Req, HttpStatus, HttpCode, 
   ValidationPipe, ParseIntPipe, Param, 
+  UnauthorizedException,
   BadRequestException
 } from '@nestjs/common';
 import { PlaylistService } from './playlist.service';
 import { CreatePlaylistDto } from '../auth/dto/create-playlist.dto';
 import { AuthGuard } from '@nestjs/passport'; 
 import { JwtPayload } from '../auth/jwt.strategy';
+
 
 @Controller('playlists')
 export class PlaylistController {
@@ -60,5 +62,15 @@ export class PlaylistController {
     const userId = (req.user as JwtPayload).userId;
     await this.playlistService.addSongToPlaylist(userId, playlistId, songId);
     return { message: 'Đã thêm bài hát vào playlist.' };
+  }
+
+  /**
+   * === API MỚI: Lấy chi tiết 1 Playlist (Công khai) ===
+   * GET /playlists/:id
+   */
+  @Get(':id') // <-- API MỚI (Public)
+  async getPlaylistById(@Param('id', ParseIntPipe) id: number) {
+    // Service sẽ kiểm tra quyền riêng tư
+    return this.playlistService.findPublicById(id);
   }
 }

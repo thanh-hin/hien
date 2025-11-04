@@ -45,4 +45,39 @@ export class UserService {
     const { password, ...result } = savedUser;
     return result;
   }
+/**
+   * HÀM MỚI: Lấy Profile CÔNG KHAI (Chỉ playlist/like công khai)
+   */
+  async findPublicProfileByUsername(username: string): Promise<Omit<User, 'password' | 'email'>> {
+    const user = await this.userRepository.findOne({ 
+        where: { username: username, active: 1 },
+        // Lấy các quan hệ cần thiết
+        relations: [
+            'playlists', 'playlists.songs', // Playlist
+            'likedSongs', 'likedSongs.song', // Bài hát yêu thích
+            'following', 'following.following', 'following.following.artist' // Người đang theo dõi
+        ] 
+    });
+    
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy người dùng này.');
+    }
+
+    // === LỌC LẠI DỮ LIỆU CÔNG KHAI ===
+    if (user.playlists) {
+        user.playlists = user.playlists.filter(pl => pl.is_private === 0 && pl.is_active === 1);
+    }
+    if (user.following) {
+        user.following = user.following.filter(f => f.active === 1);
+    }
+    
+    // Xóa thông tin nhạy cảm
+    const { 
+      password, email, verification_token, 
+      otp_expiry,
+      ...publicProfile 
+    } = user;
+
+    return publicProfile;
+  }
 }

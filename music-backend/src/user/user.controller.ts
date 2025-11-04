@@ -1,9 +1,9 @@
 // music-backend/src/user/user.controller.ts (FULL CODE)
-import { Controller, Get, Patch, Body, UseGuards, Req, ValidationPipe } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtPayload } from '../auth/jwt.strategy';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
+import { Controller, Get, Patch, Body, UseGuards, Req, ValidationPipe, Param } from '@nestjs/common';
 
 @Controller('users') // <-- TIỀN TỐ LÀ /users
 export class UserController {
@@ -34,5 +34,13 @@ export class UserController {
     return this.userService.updateProfile(userId, updateUserDto);
   }
 
-  
+  /**
+   * API MỚI: Lấy thông tin CÔNG KHAI của user
+   * GET /users/public/:username
+   */
+  @Get('public/:username') // <-- ENDPOINT MỚI
+  async getPublicProfile(@Param('username') username: string) {
+    // Gọi hàm Service (cần được sửa ở file user.service.ts)
+    return this.userService.findPublicProfileByUsername(username); 
+  }
 }

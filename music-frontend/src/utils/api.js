@@ -243,3 +243,25 @@ export const fetchMyFollowingApi = async () => {
         return [];
     }
 };
+
+/* === API MỚI: LẤY PROFILE CÔNG KHAI === */
+export const getPublicProfileApi = async (username) => {
+    try {
+        const response = await api.get(`/users/public/${username}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải profile công khai:', error);
+        throw error;
+    }
+};
+
+/* === API MỚI: LẤY CHI TIẾT PLAYLIST CÔNG KHAI === */
+export const getPublicPlaylistApi = async (playlistId) => {
+    try {
+        const response = await api.get(`/playlists/${playlistId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải chi tiết playlist:', error);
+        throw error;
+    }
+};

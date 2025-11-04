@@ -1,4 +1,4 @@
-// music-backend/src/user/user.entity.ts (BẢN SỬA LỖI CRASH 500)
+// music-backend/src/user/user.entity.ts (BẢN SỬA LỖI TS2790)
 import { 
   Entity, PrimaryGeneratedColumn, Column, 
   ManyToOne, OneToOne, JoinColumn, OneToMany, 
@@ -8,8 +8,7 @@ import { Role } from '../role/role.entity';
 import { Artist } from '../artist/artist.entity';
 import { UserLikedSongs } from '../like/user-liked-songs.entity';
 import { Playlist } from '../playlist/playlist.entity';
-// (XÓA: import { Post } from '../post/post.entity';)
-import { Follow } from '../follow/follow.entity'; // <-- Cần import Follow Entity
+import { Follow } from '../follow/follow.entity'; // <-- (1) IMPORT FOLLOW
 
 @Entity('User')
 export class User {
@@ -20,20 +19,21 @@ export class User {
   username: string;
 
   @Column({ length: 100, unique: true })
-  email: string;
+  email?: string; // <-- (2) THÊM '?' (Optional)
 
-  @Column({ length: 255, select: false }) // select: false (không trả về pass)
-  password: string;
+  @Column({ length: 255, select: false }) 
+  password?: string; // <-- (2) THÊM '?' (Optional)
 
-  @Column({ type: 'tinyint', default: 2 }) // 0=Banned, 1=Active, 2=Pending
+  @Column({ type: 'tinyint', default: 2 }) 
   active: number; 
 
   @Column({ type: 'varchar', length: 255, nullable: true, select: false }) 
-  verification_token: string | null; // Mã OTP
+  verification_token?: string | null; // <-- (2) THÊM '?' (Optional)
 
   @Column({ type: 'datetime', nullable: true, select: false }) 
-  otp_expiry: Date | null; // Hạn OTP
+  otp_expiry?: Date | null; // <-- (2) THÊM '?' (Optional)
 
+  // (Bạn đã xóa 2 cột reset_token, nên tui xóa chúng khỏi Entity)
 
   @Column({ length: 20, default: 'prefer not to say' })
   gender: string;
@@ -48,7 +48,6 @@ export class User {
   updated_at: Date;
 
   // === CÁC MỐI QUAN HỆ ===
-
   @ManyToOne(() => Role, role => role.users)
   @JoinColumn({ name: 'role_id' })
   role: Role;
@@ -62,18 +61,9 @@ export class User {
   @OneToMany(() => Playlist, playlist => playlist.user)
   playlists: Playlist[]; 
 
-  // === (4 DÒNG NÀY GÂY LỖI - ĐÃ XÓA) ===
-  // @OneToMany(() => Post, post => post.author)
-  // posts: Post[];
-  // ==================================
-
-  // 1. DANH SÁCH USER MÀ USER NÀY ĐANG THEO DÕI (FOLLOWING)
-    // mapping tới cột follower (Follow.follower)
-    @OneToMany(() => Follow, follow => follow.follower)
-    following: Follow[]; 
-
-    // 2. DANH SÁCH USER ĐANG THEO DÕI USER NÀY (FOLLOWERS)
-    // mapping tới cột following (Follow.following)
-    @OneToMany(() => Follow, follow => follow.following)
-    followers: Follow[];
+  // (Mối quan hệ Follow/Following - Đã thêm ở bước trước)
+  @OneToMany(() => Follow, follow => follow.follower)
+  following: Follow[]; 
+  @OneToMany(() => Follow, follow => follow.following)
+  followers: Follow[]; 
 }

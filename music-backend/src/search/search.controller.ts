@@ -1,6 +1,6 @@
 // music-backend/src/search/search.controller.ts (TẠO MỚI)
-import { Controller, Get, Query, ValidationPipe } from '@nestjs/common';
 import { SearchService } from './search.service';
+import { Controller, Get, Query, Patch, Body, UseGuards, Req, ValidationPipe, Param } from '@nestjs/common';
 
 @Controller('search')
 export class SearchController {

@@ -104,20 +104,15 @@ export class AuthService {
     });
 
     try {
-          const savedUser = await this.userRepository.save(user); 
-          // Tách mail ra try riêng
-          try {
-              await this.sendOtpEmail(savedUser.email, otpCode);
-          } catch (mailError) {
-              console.error('Lỗi gửi mail:', mailError);
-          }
-          
-          const { password, ...result } = savedUser;
-          return result;
-      } catch (error) {
-          console.error('Lỗi khi save user:', error);
-          throw new InternalServerErrorException('Failed to register user due to database error.');
-      }
+      const savedUser = await this.userRepository.save(user); 
+      // LỖI Ở DÒNG 110 (ĐÃ SỬA): Thêm '!' để khẳng định email tồn tại
+      await this.sendOtpEmail(savedUser.email!, otpCode); 
+      
+      const { password, ...result } = savedUser;
+      return result;
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to register user due to database error.');
+    }
   }
 
   // ===============================================
@@ -139,7 +134,7 @@ export class AuthService {
         else throw new UnauthorizedException('Tài khoản chưa được kích hoạt. ');
     }
     
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password!);
     if (!isPasswordValid) throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
 
     // === SỬA LỖI: THÊM EMAIL VÀO PAYLOAD ===
@@ -376,7 +371,7 @@ export class AuthService {
     await this.userRepository.save(user);
 
     // 3. Gửi EMAIL chứa Mã OTP
-    this.sendOtpEmail(user.email, otpCode);
+    this.sendOtpEmail(user.email!, otpCode);
 
     return { message: 'Mã OTP được gửi đến email của bạn.' };
   }
@@ -440,7 +435,7 @@ export class AuthService {
         throw new NotFoundException('Không tìm thấy người dùng.');
     }
 
-    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password!);
     if (!isPasswordValid) {
         throw new UnauthorizedException('Mật khẩu cũ không chính xác.');
     }
@@ -477,7 +472,7 @@ async requestPasswordResetOtp(userId: number): Promise<{ message: string }> {
   await this.userRepository.save(user);
 
   // 4. Gửi mail OTP (dùng hàm sendOtpEmail đã có)
-  await this.sendOtpEmail(user.email, otpCode);
+  await this.sendOtpEmail(user.email!, otpCode);
 
   return { message: `Đã gửi mã OTP đến email ${user.email}.` };
 }
