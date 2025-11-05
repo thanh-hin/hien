@@ -3,7 +3,7 @@ import { Injectable, NotFoundException, UnauthorizedException, BadRequestExcepti
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Playlist } from './playlist.entity';
-import { CreatePlaylistDto } from '../auth/dto/create-playlist.dto';
+import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { User } from '../user/user.entity';
 import { Song } from '../song/song.entity'; // <-- (1) IMPORT SONG
 

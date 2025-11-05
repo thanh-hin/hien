@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt'; 
 import { TotpModule } from '../totp/totp.module'; // <-- (1) IMPORT TOTP
 import { SharedModule } from '../shared/shared.module'; // <-- (2) IMPORT SHARED (chứa Mailer)
+import { Otp } from '../totp/totp.entity'; // <-- (1) IMPORT OTP
 
 // Imports Entity và DTO
 import { AuthService } from './auth.service';
@@ -21,7 +22,7 @@ import { JwtStrategy } from './jwt.strategy';
     forwardRef(() => UserModule), 
     
     RoleModule, 
-    TypeOrmModule.forFeature([User, Role]),
+    TypeOrmModule.forFeature([User, Role, Otp]),
     
     // === (3) THÊM 2 MODULE BỊ THIẾU VÀO ĐÂY ===
     SharedModule, // Module chứa MailerModule đã cấu hình

@@ -3,7 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { UpdateUserDto } from '../auth/dto/update-user.dto'; 
+import { UpdateUserDto } from './dto/update-user.dto'; 
 
 @Injectable()
 export class UserService {
@@ -45,17 +45,58 @@ export class UserService {
     const { password, ...result } = savedUser;
     return result;
   }
-/**
-   * HÀM MỚI: Lấy Profile CÔNG KHAI (Chỉ playlist/like công khai)
+
+  // /**
+  //  * HÀM MỚI: Lấy Profile CÔNG KHAI (Chỉ playlist/like công khai)
+  //  */
+  // async findPublicProfileByUsername(username: string): Promise<Omit<User, 'password' | 'email' | 'verification_token' | 'otp_expiry'>> {
+  //   const user = await this.userRepository.findOne({ 
+  //       where: { username: username, active: 1 },
+  //       relations: [
+  //           'playlists', 
+  //           'likedSongs', 'likedSongs.song', 'likedSongs.song.artist', 
+  //           'following', 'following.following', 'following.following.artist' 
+  //       ] 
+  //   });
+    
+  //   if (!user) {
+  //     throw new NotFoundException('Không tìm thấy người dùng này.');
+  //   }
+
+  //   // === LỌC LẠI DỮ LIỆU CÔNG KHAI ===
+  //   if (user.playlists) {
+  //       user.playlists = user.playlists.filter(pl => pl.is_private === 0 && pl.is_active === 1);
+  //   }
+  //   if (user.following) {
+  //       user.following = user.following.filter(f => f.active === 1);
+  //   }
+    
+  //   // === SỬA LỖI TS2790 (LỖI DELETE) ===
+  //   // Dùng destructuring để loại bỏ các trường nhạy cảm
+  //   const { 
+  //     password, 
+  //     email, 
+  //     otp, // (Tên quan hệ mới)
+  //     // (Xóa các cột cũ đã bị loại bỏ khỏi Entity)
+  //     // verification_token, 
+  //     // otp_expiry, 
+  //     ...publicProfile 
+  //   } = user;
+
+  //   return publicProfile; // Trả về profile sạch
+  // }
+
+
+  /**
+   * HÀM: Lấy Profile CÔNG KHAI
    */
-  async findPublicProfileByUsername(username: string): Promise<Omit<User, 'password' | 'email'>> {
+  async findPublicProfileByUsername(username: string): Promise<Omit<User, 'password' | 'email' | 'otp'>> { // <-- (1) OMIT 'otp'
     const user = await this.userRepository.findOne({ 
         where: { username: username, active: 1 },
-        // Lấy các quan hệ cần thiết
         relations: [
-            'playlists', 'playlists.songs', // Playlist
-            'likedSongs', 'likedSongs.song', // Bài hát yêu thích
-            'following', 'following.following', 'following.following.artist' // Người đang theo dõi
+            'playlists', 
+            'likedSongs', 'likedSongs.song', 'likedSongs.song.artist', 
+            'following', 'following.following', 'following.following.artist' 
         ] 
     });
     
@@ -71,13 +112,16 @@ export class UserService {
         user.following = user.following.filter(f => f.active === 1);
     }
     
-    // Xóa thông tin nhạy cảm
+    // === (2) SỬA LỖI TS2741 (LỖI DELETE) ===
+    // Dùng destructuring để loại bỏ các trường nhạy cảm
     const { 
-      password, email, verification_token, 
-      otp_expiry,
+      password, 
+      email, 
+      otp, // (Loại bỏ quan hệ otp)
       ...publicProfile 
     } = user;
 
-    return publicProfile;
+    return publicProfile; // Trả về profile sạch (đã mất 'otp')
   }
+
 }

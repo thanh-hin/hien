@@ -7,7 +7,7 @@ import {
   BadRequestException
 } from '@nestjs/common';
 import { PlaylistService } from './playlist.service';
-import { CreatePlaylistDto } from '../auth/dto/create-playlist.dto';
+import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { AuthGuard } from '@nestjs/passport'; 
 import { JwtPayload } from '../auth/jwt.strategy';
 

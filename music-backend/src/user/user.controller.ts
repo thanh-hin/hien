@@ -2,7 +2,7 @@
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtPayload } from '../auth/jwt.strategy';
-import { UpdateUserDto } from '../auth/dto/update-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { Controller, Get, Patch, Body, UseGuards, Req, ValidationPipe, Param } from '@nestjs/common';
 
 @Controller('users') // <-- TIỀN TỐ LÀ /users

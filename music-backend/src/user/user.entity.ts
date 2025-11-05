@@ -9,6 +9,7 @@ import { Artist } from '../artist/artist.entity';
 import { UserLikedSongs } from '../like/user-liked-songs.entity';
 import { Playlist } from '../playlist/playlist.entity';
 import { Follow } from '../follow/follow.entity'; // <-- (1) IMPORT FOLLOW
+import { Otp } from '../totp/totp.entity'; // <-- (1) IMPORT OTP
 
 @Entity('User')
 export class User {
@@ -27,13 +28,12 @@ export class User {
   @Column({ type: 'tinyint', default: 2 }) 
   active: number; 
 
-  @Column({ type: 'varchar', length: 255, nullable: true, select: false }) 
-  verification_token?: string | null; // <-- (2) THÊM '?' (Optional)
+  // @Column({ type: 'varchar', length: 255, nullable: true, select: false }) 
+  // verification_token?: string | null; // <-- (2) THÊM '?' (Optional)
 
-  @Column({ type: 'datetime', nullable: true, select: false }) 
-  otp_expiry?: Date | null; // <-- (2) THÊM '?' (Optional)
+  // @Column({ type: 'datetime', nullable: true, select: false }) 
+  // otp_expiry?: Date | null; // <-- (2) THÊM '?' (Optional)
 
-  // (Bạn đã xóa 2 cột reset_token, nên tui xóa chúng khỏi Entity)
 
   @Column({ length: 20, default: 'prefer not to say' })
   gender: string;
@@ -57,6 +57,12 @@ export class User {
 
   @OneToMany(() => UserLikedSongs, (like) => like.user)
   likedSongs: UserLikedSongs[];
+
+  // === (3) THÊM QUAN HỆ MỚI ===
+  @OneToOne(() => Otp, otp => otp.user, { 
+      cascade: true // Tự động tạo/xóa OTP khi User thay đổi
+  })
+  otp: Otp;
 
   @OneToMany(() => Playlist, playlist => playlist.user)
   playlists: Playlist[]; 

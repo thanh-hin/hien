@@ -17,6 +17,7 @@ import { ResendOtpDto } from './dto/resend-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto'; // <-- IMPORT MỚI
 import { ResetPasswordWithOtpDto } from './dto/reset-password-with-otp.dto'; // <-- IMPORT MỚI
 import { ChangePasswordDto } from './dto/change-password.dto'; // <-- IMPORT MỚI
+import { Otp } from '../totp/totp.entity'; // <-- (1) IMPORT OTP
 
 
 @Injectable()
@@ -29,6 +30,8 @@ export class AuthService {
     private jwtService: JwtService,
     private mailerService: MailerService, 
     private totpService: TotpService,
+    @InjectRepository(Otp) // <-- (2) TIÊM OTP REPO
+    private otpRepository: Repository<Otp>,
   ) {}
   
   // ===============================================
@@ -51,15 +54,18 @@ export class AuthService {
       }
   }
 
- // ===============================================
+// ===============================================
   // 1. HÀM REGISTER (ĐĂNG KÝ)
   // ===============================================
   async register(registerAuthDto: RegisterAuthDto): Promise<Omit<User, 'password'>> {
     const { username, email, password, gender, birth_year } = registerAuthDto;
 
-    const existingUser = await this.userRepository.findOne({ where: { email } });
+    // === SỬA LỖI: TẢI QUAN HỆ 'otp' KHI KIỂM TRA ===
+    const existingUser = await this.userRepository.findOne({ 
+        where: { email },
+        relations: ['otp'] 
+    });
 
-    // (Logic xử lý user đã tồn tại - giữ nguyên)
     if (existingUser) {
         if (existingUser.active === 1) { 
              throw new ConflictException('Email đã tồn tại và đã được kích hoạt.');
@@ -68,23 +74,26 @@ export class AuthService {
             throw new ConflictException('Tài khoản đã bị khóa.');
         }
         if (existingUser.active === 2) {
-            // (Logic gửi lại OTP - giữ nguyên)
-          const otpCode = this.totpService.generateOtp();
-          const expiryTime = this.totpService.getExpiryTime();
-          existingUser.verification_token = otpCode;
-          existingUser.otp_expiry = expiryTime;
-          await this.userRepository.save(existingUser);
-          await this.sendOtpEmail(email, otpCode);
-          throw new ConflictException({
+            // (SỬA LOGIC: GỬI LẠI OTP VÀO BẢNG MỚI)
+            const otpCode = this.totpService.generateOtp();
+            const expiryTime = this.totpService.getExpiryTime();
+            
+            // Cập nhật hoặc Tạo mới (Upsert)
+            await this.otpRepository.upsert({
+                user_id: existingUser.id,
+                code: otpCode,
+                expires_at: expiryTime
+            }, ['user_id']);
+            
+            await this.sendOtpEmail(email, otpCode);
+            throw new ConflictException({
                 message: 'Tài khoản đang chờ xác thực. Mã xác nhận mới đã được gửi lại.',
                 status: 'pending_verification', 
             });
         }
     }
 
-    // === SỬA LỖI 500 (DÙNG SAI REPO) ===
     const listenerRole = await this.roleRepository.findOne({ where: { name: 'listener' } });
-    // ===================================
     if (!listenerRole) throw new InternalServerErrorException("Default role 'listener' not found");
 
     const salt = await bcrypt.genSalt();
@@ -97,15 +106,17 @@ export class AuthService {
       username, email, password: hashedPassword, 
       role: listenerRole,
       active: 2, 
-      verification_token: otpCode, 
-      otp_expiry: expiryTime,      
       gender: gender, 
       birth_year: birth_year ? birth_year : null,
+      // (3) TẠO OTP LỒNG NHAU (SỬ DỤNG CASCADE)
+      otp: this.otpRepository.create({ 
+          code: otpCode,
+          expires_at: expiryTime
+      })
     });
 
     try {
       const savedUser = await this.userRepository.save(user); 
-      // LỖI Ở DÒNG 110 (ĐÃ SỬA): Thêm '!' để khẳng định email tồn tại
       await this.sendOtpEmail(savedUser.email!, otpCode); 
       
       const { password, ...result } = savedUser;
@@ -281,144 +292,126 @@ export class AuthService {
 //     return { accessToken };
 //   }
 
-  // ===============================================
-  // 3. HÀM VERIFY OTP (XÁC THỰC MÃ)
-  // ===============================================
-  async verifyOtp(email: string, otpCode: string): Promise<User> {
-    const user = await this.userRepository
-        .createQueryBuilder('user')
-        .addSelect(['user.verification_token', 'user.otp_expiry']) 
-        .where('user.email = :email', { email })
-        .getOne();
-
-    if (!user || user.active === 1 || user.active === 0) {
-        if (!user) throw new NotFoundException('Tài khoản không tồn tại.');
-        if (user.active === 1) throw new NotFoundException('Tài khoản đã được kích hoạt.');
-        if (user.active === 0) throw new UnauthorizedException('Tài khoản đã bị khóa và không thể kích hoạt.');
-    }
-    
-    if (user.verification_token !== otpCode) {
-      throw new UnauthorizedException('Mã xác nhận không đúng.');
-    }
-    
-    if (user.otp_expiry && new Date() > user.otp_expiry) {
-      user.verification_token = null; 
-      user.otp_expiry = null;
-      await this.userRepository.save(user);
-      throw new UnauthorizedException('Mã xác nhận đã hết hạn. Vui lòng gửi lại mã.');
-    }
-    
-    user.active = 1; 
-    user.verification_token = null; 
-    user.otp_expiry = null;
-
-    return this.userRepository.save(user);
-  }
-
-  // ===============================================
-  // 4. HÀM RESEND OTP (GỬI LẠI MÃ)
-  // ===============================================
-  async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string }> {
-    const { email } = resendOtpDto;
-    
-    const user = await this.userRepository
-        .createQueryBuilder('user')
-        .addSelect(['user.verification_token', 'user.otp_expiry']) 
-        .where('user.email = :email', { email })
-        .getOne();
-
-    if (!user || user.active === 1 || user.active === 0) {
-      return { message: 'Yêu cầu gửi lại mã đã được xử lý (nếu tài khoản cần xác thực).' };
-    }
-    
-    const otpCode = this.totpService.generateOtp();
-    const expiryTime = this.totpService.getExpiryTime();
-
-    user.verification_token = otpCode;
-    user.otp_expiry = expiryTime;
-    await this.userRepository.save(user);
-
-    await this.sendOtpEmail(email, otpCode);
-
-    return { message: 'Mã xác nhận mới đã được gửi đến email của bạn.' };
-  }
-  
-  // ===============================================
-  // 5. HÀM FORGOT PASSWORD (DÙNG OTP)
-  // ===============================================
-  async forgotPasswordOtp(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
-    const { email } = forgotPasswordDto;
-    
-    const user = await this.userRepository.findOne({ where: { email } });
-
-    // 1. Nếu user không tồn tại hoặc bị cấm (active=0), trả về thông báo chung (bảo mật)
-    if (!user || user.active === 0) {
-      return { message: 'Nếu tài khoản tồn tại và không bị khóa, mã đặt lại mật khẩu đã được gửi.' };
-    }
-    
-    // 2. TẠO OTP mới và lưu vào cột sẵn có
-    const otpCode = this.totpService.generateOtp(); 
-    const expiryTime = this.totpService.getExpiryTime(); // Hạn ngắn (thường 5 phút)
-    
-    user.verification_token = otpCode;
-    user.otp_expiry = expiryTime;
-    
-    // Đảm bảo trạng thái không bị khóa sau khi gửi OTP
-    if (user.active !== 1) {
-        user.active = 2; // Đặt về trạng thái chờ xác thực (nếu đang là active khác 1)
-    }
-
-    await this.userRepository.save(user);
-
-    // 3. Gửi EMAIL chứa Mã OTP
-    this.sendOtpEmail(user.email!, otpCode);
-
-    return { message: 'Mã OTP được gửi đến email của bạn.' };
-  }
-  
-  // ===============================================
-  // 6. HÀM RESET PASSWORD (DÙNG OTP)
-  // ===============================================
-  async resetPasswordOtp(resetPasswordDto: ResetPasswordWithOtpDto): Promise<{ message: string }> {
-    const { email, otpCode, newPassword } = resetPasswordDto;
-    
-    const user = await this.userRepository.findOne({ 
+// ===============================================
+  // 3. HÀM VERIFY OTP (SỬA LỖI TYPESCRIPT)
+  // ===============================================
+  async verifyOtp(email: string, otpCode: string): Promise<User> {
+    const user = await this.userRepository.findOne({ 
         where: { email },
-        select: ['id', 'email', 'password', 'verification_token', 'otp_expiry', 'active']
+        relations: ['otp'] 
     });
 
-    // 1. Kiểm tra user tồn tại và không bị cấm
-    if (!user || user.active === 0) {
-      throw new BadRequestException('Yêu cầu đặt lại mật khẩu không hợp lệ.');
+    // === SỬA LỖI: TÁCH CÂU LỆNH IF ===
+    // 1. Kiểm tra User tồn tại
+    if (!user) {
+        throw new NotFoundException('Tài khoản không tồn tại.');
+    }
+
+    // 2. Kiểm tra trạng thái Active (Bây giờ 'user' chắc chắn không null)
+    if (user.active === 1) {
+        throw new NotFoundException('Tài khoản đã được kích hoạt.');
     }
-    
-    // 2. Kiểm tra OTP có khớp không
-    if (user.verification_token !== otpCode) {
-      throw new UnauthorizedException('Mã xác nhận (OTP) không đúng.');
+    if (user.active === 0) {
+        throw new UnauthorizedException('Tài khoản đã bị khóa và không thể kích hoạt.');
     }
-    
-    // 3. Kiểm tra OTP hết hạn
-    if (user.otp_expiry && new Date() > user.otp_expiry) {
-      user.verification_token = null; 
-      user.otp_expiry = null;
-      await this.userRepository.save(user);
-      throw new UnauthorizedException('Mã xác nhận đã hết hạn. Vui lòng yêu cầu lại.');
-    }
+    // ===================================
+    
+    // (Bây giờ 'user.otp' đã an toàn)
+    if (!user.otp || user.otp.code !== otpCode) {
+      throw new UnauthorizedException('Mã xác nhận không đúng.');
+    }
+    
+    if (new Date() > user.otp.expires_at) {
+      await this.otpRepository.delete({ user_id: user.id }); 
+      throw new UnauthorizedException('Mã xác nhận đã hết hạn. Vui lòng gửi lại mã.');
+    }
+    
+    user.active = 1; 
+    await this.otpRepository.delete({ user_id: user.id }); 
+    delete (user as any).otp; 
 
-    // 4. Hash mật khẩu mới và lưu
-    const salt = await bcrypt.genSalt();
-    const newHashedPassword = await bcrypt.hash(newPassword, salt);
-
-    user.password = newHashedPassword;
-    user.verification_token = null; // Xóa token sau khi dùng
-    user.otp_expiry = null;         // Xóa thời gian hết hạn
-    user.active = 1;                // Kích hoạt user (active=1) sau khi đặt lại thành công
-
-    await this.userRepository.save(user);
-
-    return { message: 'Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập.' };
+    return this.userRepository.save(user);
+  }
+  // ===============================================
+  // 4. HÀM RESEND OTP / FORGOT PASSWORD / REQUEST OTP (GỬI LẠI MÃ)
+  // ===============================================
+  private async createOrUpdateOtp(user: User): Promise<string> {
+    const otpCode = this.totpService.generateOtp();
+    const expiryTime = this.totpService.getExpiryTime();
+    await this.otpRepository.upsert({
+        user_id: user.id,
+        code: otpCode,
+        expires_at: expiryTime,
+    }, ['user_id']); 
+    return otpCode;
   }
 
+  async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ message: string }> {
+    const { email } = resendOtpDto;
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user || user.active === 1 || user.active === 0) {
+      return { message: 'Yêu cầu gửi lại mã đã được xử lý.' };
+    }
+    const otpCode = await this.createOrUpdateOtp(user);
+    await this.sendOtpEmail(user.email!, otpCode);
+    return { message: 'Mã xác nhận mới đã được gửi đến email của bạn.' };
+  }
+  
+  async forgotPasswordOtp(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
+    const { email } = forgotPasswordDto;
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user || user.active === 0) {
+      return { message: 'Nếu tài khoản tồn tại, mã đã được gửi.' };
+    }
+    const otpCode = await this.createOrUpdateOtp(user);
+    this.sendOtpEmail(user.email!, otpCode);
+    return { message: 'Mã OTP được gửi đến email của bạn.' };
+  }
+  
+  async requestPasswordResetOtp(userId: number): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user || user.active === 0) {
+      throw new NotFoundException('Không thể xử lý yêu cầu.');
+    }
+    const otpCode = await this.createOrUpdateOtp(user);
+    await this.sendOtpEmail(user.email!, otpCode);
+    return { message: `Đã gửi mã OTP đến email ${user.email}.` };
+  }
+
+  // ===============================================
+  // 6. HÀM RESET PASSWORD (DÙNG OTP)
+  // ===============================================
+  async resetPasswordOtp(resetPasswordDto: ResetPasswordWithOtpDto): Promise<{ message: string }> {
+    const { email, otpCode, newPassword } = resetPasswordDto;
+    
+    const user = await this.userRepository.findOne({ 
+        where: { email },
+        relations: ['otp'] // (Tải quan hệ Otp)
+    });
+
+    // === SỬA LỖI: TÁCH CÂU LỆNH IF ===
+    if (!user || user.active === 0) { 
+        throw new BadRequestException('Yêu cầu đặt lại mật khẩu không hợp lệ.');
+    }
+    
+    if (!user.otp || user.otp.code !== otpCode) {
+      throw new UnauthorizedException('Mã xác nhận (OTP) không đúng.');
+    }
+    if (new Date() > user.otp.expires_at) {
+      await this.otpRepository.delete({ user_id: user.id });
+      throw new UnauthorizedException('Mã xác nhận đã hết hạn.');
+    }
+    // ===================================
+
+    const salt = await bcrypt.genSalt();
+    user.password = await bcrypt.hash(newPassword, salt);
+    user.active = 1; 
+    await this.otpRepository.delete({ user_id: user.id }); // Xóa OTP
+    delete (user as any).otp;
+    await this.userRepository.save(user);
+
+    return { message: 'Mật khẩu đã được đặt lại thành công.' };
+  }
   /**
    * 7. HÀM MỚI: ĐỔI MẬT KHẨU (Khi đã đăng nhập)
    */
@@ -447,34 +440,34 @@ export class AuthService {
     
     return { message: 'Đổi mật khẩu thành công.' };
   }
-/**
- * 8. HÀM MỚI: Yêu cầu OTP đổi pass (Khi ĐÃ ĐĂNG NHẬP)
- * Chỉ áp dụng cho user đã active (active=1)
- */
-async requestPasswordResetOtp(userId: number): Promise<{ message: string }> {
-  // 1. Tìm user bằng ID
-  const user = await this.userRepository.findOne({ where: { id: userId } });
+// /**
+//  * 8. HÀM MỚI: Yêu cầu OTP đổi pass (Khi ĐÃ ĐĂNG NHẬP)
+//  * Chỉ áp dụng cho user đã active (active=1)
+//  */
+// async requestPasswordResetOtp(userId: number): Promise<{ message: string }> {
+//   // 1. Tìm user bằng ID
+//   const user = await this.userRepository.findOne({ where: { id: userId } });
 
-  // 2. Nếu user không tồn tại hoặc chưa active
-  if (!user || user.active !== 1) {
-    throw new NotFoundException(
-      'Chỉ có thể yêu cầu đổi mật khẩu cho tài khoản đã kích hoạt.'
-    );
-  }
+//   // 2. Nếu user không tồn tại hoặc chưa active
+//   if (!user || user.active !== 1) {
+//     throw new NotFoundException(
+//       'Chỉ có thể yêu cầu đổi mật khẩu cho tài khoản đã kích hoạt.'
+//     );
+//   }
 
-  // 3. Tạo OTP mới và lưu vào cột verification_token + otp_expiry
-  const otpCode = this.totpService.generateOtp();
-  const expiryTime = this.totpService.getExpiryTime(); // Hạn 5 phút
+//   // 3. Tạo OTP mới và lưu vào cột verification_token + otp_expiry
+//   const otpCode = this.totpService.generateOtp();
+//   const expiryTime = this.totpService.getExpiryTime(); // Hạn 5 phút
 
-  user.verification_token = otpCode;
-  user.otp_expiry = expiryTime;
+//   user.verification_token = otpCode;
+//   user.otp_expiry = expiryTime;
 
-  await this.userRepository.save(user);
+//   await this.userRepository.save(user);
 
-  // 4. Gửi mail OTP (dùng hàm sendOtpEmail đã có)
-  await this.sendOtpEmail(user.email!, otpCode);
+//   // 4. Gửi mail OTP (dùng hàm sendOtpEmail đã có)
+//   await this.sendOtpEmail(user.email!, otpCode);
 
-  return { message: `Đã gửi mã OTP đến email ${user.email}.` };
-}
+//   return { message: `Đã gửi mã OTP đến email ${user.email}.` };
+// }
 
 }
