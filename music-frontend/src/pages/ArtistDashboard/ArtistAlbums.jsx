@@ -1,13 +1,12 @@
-// music-frontend/src/pages/ArtistDashboard/ArtistAlbums.jsx (FULL CODE SỬA LỖI)
+// music-frontend/src/pages/ArtistDashboard/ArtistAlbums.jsx (BẢN SỬA LỖI FINAL)
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-// (1) IMPORT API TỪ FILE api.js (KHÔNG PHẢI TẠO MỚI)
 import { getMyAlbumsApi, deleteMyAlbumApi } from '../../utils/api'; 
 import '../ProfileUser/Profile.css'; 
 import './ArtistDashboard.css'; 
-import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
-// (2) IMPORT ĐÚNG TÊN MODAL (AlbumFormModal)
+import { FaPlus, FaEdit, FaTrash, FaMusic } from 'react-icons/fa';
 import AlbumFormModal from '../../components/AlbumFormModal'; 
+import AddSinglesToAlbumModal from '../../components/AddSinglesToAlbumModal'; // <-- (1) IMPORT MODAL MỚI
 
 // (Hàm Toast Helper)
 const showToast = (message, type = 'success') => { alert(message); };
@@ -28,22 +27,25 @@ const fixUrl = (url, type = 'image') => {
     return `http://localhost:3000${url.replace(originalPath, prefix)}`;
 };
 
-// (ĐÃ XÓA CÁC HÀM API MOCK BỊ LỖI Ở ĐÂY)
 
 const ArtistAlbums = () => {
     const [albums, setAlbums] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     
-    // === (3) SỬA STATE ĐỂ QUẢN LÝ MODAL ===
-    const [showAlbumModal, setShowAlbumModal] = useState(false);
-    const [editingAlbum, setEditingAlbum] = useState(null); // (null = Tạo, Object = Sửa)
+    // === (2) STATE CHO MODAL ALBUM VÀ SONG ===
+    const [showAlbumModal, setShowAlbumModal] = useState(false); // Modal Tạo/Sửa Album
+    const [editingAlbum, setEditingAlbum] = useState(null); 
+    
+    // STATE MỚI: Dùng cho việc Thêm Singles vào Album cụ thể
+    const [showAddSinglesModal, setShowAddSinglesModal] = useState(false); 
+    const [targetAlbum, setTargetAlbum] = useState(null); // Lưu Album đang được chọn để thêm bài
     // ======================================
 
     const fetchAlbums = async () => {
         setLoading(true);
         try {
-            const res = await getMyAlbumsApi(); // <-- (4) GỌI API ĐÚNG
+            const res = await getMyAlbumsApi(); 
             const fixedAlbums = res.map(album => ({
                 ...album,
                 cover_url: fixUrl(album.cover_url, 'album')
@@ -59,23 +61,38 @@ const ArtistAlbums = () => {
         fetchAlbums();
     }, []);
 
-    // (Hàm Tạo/Sửa)
-    const handleCreate = () => {
-        setEditingAlbum(null); 
-        setShowAlbumModal(true); 
+
+    // HÀM: Mở modal Tạo Album
+    const handleCreateAlbum = () => {
+        setEditingAlbum(null);
+        setShowAlbumModal(true);
     };
 
+    // HÀM: Mở modal Sửa Album
     const handleEdit = (album) => {
-        setEditingAlbum(album); 
-        setShowAlbumModal(true); 
+        setEditingAlbum(album);
+        setShowAlbumModal(true);
     };
 
-    // (Hàm Xóa)
+    // HÀM MỚI: Mở modal Thêm Singles
+    const handleAddSingles = (album) => {
+        setTargetAlbum(album); // Đặt album đích
+        setShowAddSinglesModal(true); // <-- (3) MỞ MODAL
+    };
+    
+    // Hàm tải lại danh sách (sau khi Album/Song được tạo/sửa)
+    const handleComplete = () => {
+        setShowAlbumModal(false);
+        setShowAddSinglesModal(false); // Đóng Modal Singles
+        fetchAlbums();
+    };
+
+    // Xử lý Xóa (Giữ nguyên)
     const handleDelete = async (albumId) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa Album này? (Bài hát sẽ bị mất liên kết)')) return;
         
         try {
-            await deleteMyAlbumApi(albumId); // <-- (4) GỌI API ĐÚNG
+            await deleteMyAlbumApi(albumId); 
             showToast('Đã xóa Album thành công.');
             fetchAlbums(); 
         } catch (error) {
@@ -89,7 +106,9 @@ const ArtistAlbums = () => {
         <div className="artist-albums-container">
             <div className="dashboard-section-header">
                 <h2>Quản lý Album ({albums.length})</h2>
-                <button className="btn-create-new" onClick={handleCreate}>
+                
+                {/* NÚT TẠO ALBUM */}
+                <button className="btn-create-new" onClick={handleCreateAlbum}>
                     <FaPlus /> Tạo Album Mới
                 </button>
             </div>
@@ -108,10 +127,24 @@ const ArtistAlbums = () => {
                             <p className="card-subtitle">{new Date(album.release_date).getFullYear()}</p>
                             
                             <div className="card-actions">
-                                <button className="btn-icon" onClick={() => handleEdit(album)}> 
+                                
+                                {/* === (4) NÚT THÊM BÀI HÁT === */}
+                                <button 
+                                    className="btn-icon btn-add-song" 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        handleAddSingles(album); // <-- GỌI HÀM MỚI
+                                    }}
+                                    title="Thêm bài hát vào Album"
+                                >
+                                    <FaMusic />
+                                </button>
+                                {/* ========================== */}
+
+                                <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleEdit(album); }}> 
                                     <FaEdit />
                                 </button>
-                                <button className="btn-icon btn-danger" onClick={() => handleDelete(album.id)}>
+                                <button className="btn-icon btn-danger" onClick={(e) => { e.stopPropagation(); handleDelete(album.id); }}>
                                     <FaTrash />
                                 </button>
                             </div>
@@ -122,12 +155,21 @@ const ArtistAlbums = () => {
                 )}
             </div>
             
-            {/* === (5) HIỂN THỊ ĐÚNG TÊN MODAL === */}
+            {/* === (5) MODAL TẠO/SỬA ALBUM === */}
             {showAlbumModal && (
                 <AlbumFormModal 
                     onClose={() => setShowAlbumModal(false)}
-                    onComplete={fetchAlbums} 
+                    onComplete={handleComplete} 
                     albumToEdit={editingAlbum} 
+                />
+            )}
+
+            {/* === (6) MODAL THÊM SINGLES VÀO ALBUM === */}
+            {showAddSinglesModal && targetAlbum && (
+                <AddSinglesToAlbumModal 
+                    onClose={() => setShowAddSinglesModal(false)}
+                    onComplete={handleComplete} 
+                    targetAlbum={targetAlbum} // Truyền Album đích
                 />
             )}
         </div>

@@ -26,29 +26,39 @@ export class AlbumService {
     return artist;
   }
 
-  async findOne(id: number): Promise<Album> {
-    const album = await this.albumRepository.findOne({
-      where: { id: id },
-      relations: [
-        'artist', 
-        'songs', 
-        'songs.artist' 
-      ],
-      order: {
-        // === SỬA LỖI TẠI ĐÂY (TRỞ LẠI DÒNG GỐC) ===
-        songs: { 
-            track_number: 'ASC' // <-- Giờ đã hợp lệ
-        } 
-      } as any, // Giữ lại as any để tránh lỗi TypeScript khi query lồng nhau
-    });
+  /**
+     * API: Lấy chi tiết 1 Album (Chỉ hiển thị bài hát APPROVED)
+     */
+    async findOne(id: number): Promise<Album> {
+        // === SỬ DỤNG QUERY BUILDER ĐỂ LỌC BÀI HÁT ===
+        const album = await this.albumRepository.createQueryBuilder('album')
+            // Load Album theo ID
+            .where('album.id = :albumId', { albumId: id })
+            
+            // JOIN Artist
+            .leftJoinAndSelect('album.artist', 'artist')
+            
+            // JOIN Songs VÀ LỌC THEO STATUS
+            .leftJoinAndSelect('album.songs', 'song', 
+                // CHỈ LẤY CÁC BÀI HÁT CÓ STATUS LÀ APPROVED
+                'song.status = :status AND song.active = :active', 
+                { status: 'APPROVED', active: true }
+            )
+            // JOIN Artist của Bài hát (cho tên nghệ sĩ)
+            .leftJoinAndSelect('song.artist', 'songArtist')
+            
+            // Sắp xếp bài hát theo track_number
+            .orderBy('song.track_number', 'ASC')
+            
+            .getOne();
+        // ===========================================
 
-    if (!album) {
-      throw new NotFoundException(`Album with ID ${id} not found.`);
+        if (!album) {
+            throw new NotFoundException(`Album with ID ${id} not found.`);
+        }
+
+        return album;
     }
-
-    return album;
-  }
-
   /**
    * HÀM MỚI: Lấy tất cả Album
    */

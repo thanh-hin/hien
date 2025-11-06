@@ -376,3 +376,69 @@ export const deleteMyAlbumApi = async (id) => {
         throw error;
     }
 };
+
+/* === API MỚI: QUẢN LÝ BÀI HÁT CỦA NGHỆ SĨ (CẦN TOKEN) === */
+
+// Lấy bài hát (có lọc theo status)
+export const getMySongsApi = async (status) => {
+    try {
+        const response = await api.get(`/song/my-songs?status=${status}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi tải bài hát của tôi:', error);
+        throw error;
+    }
+};
+
+// Tạo bài hát (FormData)
+export const createSongApi = async (formData) => {
+    try {
+        const response = await api.post('/song/my', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    } catch (error) { throw error; }
+};
+
+// Sửa bài hát (FormData)
+export const updateMySongApi = async (songId, formData) => {
+    try {
+        const response = await api.patch(`/song/my/${songId}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    } catch (error) { throw error; }
+};
+
+// Xóa bài hát
+export const deleteMySongApi = async (songId) => {
+    try {
+        const response = await api.delete(`/song/my/${songId}`);
+        return response.data;
+    } catch (error) { throw error; }
+};
+
+export const fetchMySinglesApi = async () => {
+    try {
+        const response = await api.get('/song/my-singles');
+        return response.data;
+    } catch (error) { throw error; }
+};
+
+export const addSongToAlbumApi = async (songId, albumId) => {
+    try {
+        const response = await api.patch('/song/add-to-album', { songId, albumId });
+        return response.data;
+    } catch (error) { throw error; }
+};
+
+/* === API MỚI: TĂNG LƯỢT NGHE (KHÔNG CẦN TOKEN) === */
+export const incrementPlayCountApi = async (songId) => {
+    try {
+        // Gọi API PATCH /song/play/:id
+        await api.patch(`/song/play/${songId}`);
+    } catch (error) {
+        // Bỏ qua lỗi 4xx/5xx (Không muốn làm crash Player)
+        console.warn(`Không thể tăng lượt nghe cho bài hát ID ${songId}.`);
+    }
+};

@@ -28,45 +28,53 @@ export class ArtistService {
   /**
    * Lấy danh sách 6 nghệ sĩ ngẫu nhiên cho trang chủ (Sử dụng SQL Thô)
    */
-  async findFeaturedArtists(): Promise<Artist[]> {
-    // Sử dụng query() trực tiếp để khắc phục lỗi RAND()
+async findFeaturedArtists(): Promise<Artist[]> {
+  try {
     const query = `
-        SELECT * FROM Artist 
-        WHERE active = 1 
-        ORDER BY RAND() 
-        LIMIT 6
+      SELECT * FROM artist 
+      WHERE active = 1 AND registration_status = 'APPROVED' 
+      ORDER BY RAND() 
+      LIMIT 6
     `;
-
     const artists = await this.artistRepository.query(query);
-    
-    // TypeORM sẽ tự động ánh xạ kết quả SELECT * thành đối tượng Artist
     return artists;
+  } catch (err) {
+    console.error('🔥 Lỗi khi truy vấn featured artists:', err.message);
+    throw new InternalServerErrorException('Không thể tải danh sách nghệ sĩ nổi bật.');
   }
+}
 
   /**
    * Lấy chi tiết một nghệ sĩ theo ID, bao gồm Bài hát và Album (Dùng cho Trang Detail)
    */
   async findOne(id: number): Promise<Artist | null> {
-    return this.artistRepository.findOne({
-      where: { id: id, active: 1 },
-      // === QUAN TRỌNG: JOIN các quan hệ ===
-      relations: ['user', 'songs', 'albums'], 
-      // Sắp xếp dữ liệu liên quan
-     // === SỬA LỖI TYPESCRIPT/TYPEORM TẠI ĐÂY ===
-      order: {
-         songs: { id: 'DESC' }, // Sắp xếp bài hát theo ID (mới nhất)
-         albums: { release_date: 'DESC' } // Album mới nhất
-       } as any // <-- PHẢI THÊM 'as any' để tránh lỗi TS2353/lỗi cú pháp
-          
-    });
-  }
+    return this.artistRepository.findOne({
+      where: { 
+            id: id, 
+            active: 1,
+            // === SỬA LỖI: THÊM LỌC STATUS ===
+            registrationStatus: 'APPROVED' 
+            // ================================
+        },
+      relations: ['user', 'songs', 'albums'], 
+      order: {
+         songs: { id: 'DESC' }, 
+         albums: { release_date: 'DESC' } 
+       } as any 
+    });
+  }
 
   async findAllArtists(): Promise<Artist[]> {
-    return this.artistRepository.find({
-      where: { active: 1 },
-      order: { stage_name: 'ASC' }, // Sắp xếp A-Z
-    });
-  }
+    return this.artistRepository.find({
+      where: { 
+            active: 1,
+            // === SỬA LỖI: THÊM LỌC STATUS ===
+            registrationStatus: 'APPROVED' 
+            // ================================
+        },
+      order: { stage_name: 'ASC' }, // Sắp xếp A-Z
+    });
+  }
 
 /**
    * 1. HÀM ĐĂNG KÝ (Tạo Artist với trạng thái PENDING)

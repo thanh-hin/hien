@@ -1,19 +1,20 @@
 // src/song/song.entity.ts
 import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
-  UpdateDateColumn, 
-  ManyToOne, 
-  OneToOne, 
-  JoinColumn,
-  OneToMany
+  Entity, 
+  PrimaryGeneratedColumn, 
+  Column, // <-- PHẢI CÓ DÒNG NÀY!
+  CreateDateColumn, 
+  UpdateDateColumn, 
+  ManyToOne, 
+  OneToOne, 
+  JoinColumn,
+  OneToMany
 } from 'typeorm';
 import { Album } from '../album/album.entity';
 import { Artist } from '../artist/artist.entity';
 import { Lyrics } from '../lyrics/lyrics.entity';
 import { UserLikedSongs } from '../like/user-liked-songs.entity'; // <-- THÊM DÒNG NÀY
+import { Category } from '../category/category.entity';
 
 @Entity('Song') // Ánh xạ với bảng 'Song'
 export class Song {
@@ -46,15 +47,26 @@ export class Song {
   genre: string;
 
   @Column({ length: 255, nullable: true, name: 'image_url' })
-  image_url: string;
+  image_url?: string; // <-- sửa null thành undefined / optional
 
+
+  // === CỘT MỚI: TRẠNG THÁI DUYỆT ===
+  @Column({ type: 'varchar', length: 20, default: 'PENDING' }) 
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'; 
+  // ===================================
+
+  
   // Quan hệ: Nhiều Song thuộc 1 Album (Album có thể null)
-  @ManyToOne(() => Album, (album) => album.songs, { 
-    nullable: true, 
-    onDelete: 'SET NULL' 
-  })
-  @JoinColumn({ name: 'album_id' })
-  album: Album;
+// === (2) SỬA LỖI: CHO PHÉP ALBUM LÀ NULL TRONG QUAN HỆ ===
+  @ManyToOne(() => Album, (album) => album.songs, { 
+    nullable: true, // <-- THÊM nullable: true
+    onDelete: 'SET NULL' 
+  })
+  @JoinColumn({ name: 'album_id' })
+  album: Album | null; // <-- THÊM | null
+
+  @Column({ type: 'int', default: 0 })
+  play_count: number; // <--- thêm cột này
 
   // Quan hệ: Nhiều Song thuộc 1 Artist
   @ManyToOne(() => Artist, (artist) => artist.songs, { onDelete: 'CASCADE' })

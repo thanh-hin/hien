@@ -228,3 +228,34 @@
 .user-dropdown div:last-child {
     border-top: 1px solid var(--color-border);
 }
+
+/* music-frontend/src/components/Header.css (THÊM VÀO CUỐI) */
+
+/* === (MỚI) HUY HIỆU ARTIST ĐÃ DUYỆT === */
+.btn-artist-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    
+    /* Style cơ bản giống nút nhưng không phải nút bấm */
+    background-color: var(--color-surface); 
+    border: 1px solid var(--color-accent);
+    
+    color: var(--color-accent); /* Chữ xanh lá */
+    padding: 8px 12px;
+    border-radius: 500px;
+    font-weight: 700;
+    font-size: 14px;
+    
+    cursor: pointer; /* Cho phép click để chuyển sang dashboard */
+    transition: background-color 0.2s;
+    cursor: 'default'
+}
+
+.btn-artist-badge:hover {
+    background-color: rgba(29, 185, 84, 0.2); /* Nền xanh nhẹ khi hover */
+}
+
+.btn-artist-badge svg {
+    color: var(--color-accent); /* Màu icon tích xanh */
+}

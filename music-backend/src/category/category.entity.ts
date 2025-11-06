@@ -1,5 +1,6 @@
 // music-backend/src/category/category.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Song } from '../song/song.entity'; // <-- (2) IMPORT SONG ENTITY
 
 @Entity('Category')
 export class Category {
@@ -25,4 +26,5 @@ export class Category {
     name: 'image_url' 
   })
   image_url: string;
+
 }

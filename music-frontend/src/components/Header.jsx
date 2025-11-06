@@ -230,31 +230,44 @@ const Header = () => {
       <div className="header-right">
         {isAuthenticated ? (
           <> 
-            {user?.role === 'listener' && (
+            {/* === (2) LOGIC HIỂN THỊ HUY HIỆU ARTIST HOẶC NÚT ĐĂNG KÝ === */}
+            {user?.role === 'artist' ? (
+                // Nếu là Artist (Đã duyệt)
+              <div 
+                className="btn-artist-badge" 
+                // onClick={() => navigate('/artist-dashboard/info')}
+                title="Tài khoản nghệ sĩ"
+              >
+                <FaCheckCircle size={15} />
+                Nghệ sĩ
+              </div>
+            ) : (user?.role === 'listener' && (
+                // Nếu là Listener
               <button className="btn-become-artist" onClick={handleBecomeArtist}>
                 Trở thành Nghệ sĩ
               </button>
-            )}
+            ))}
+            {/* ======================================================== */}
+
             <div className="user-menu" ref={userMenuRef}>
               <button className="user-menu-button" onClick={handleUserMenu}>
                 <FaUserCircle size={28} />
                 <span>{user?.username}</span>
               </button>
               {dropdownOpen && (
-              <div className="user-dropdown">
-                {/* SỬA LINK: /account thay vì /profile/info */}
-                <div onClick={() => { navigate('/profile/info'); setDropdownOpen(false); }}>Tài khoản (Cá nhân)</div>
-                
-                {/* === (THÊM LINK MỚI NẾU LÀ ARTIST) === */}
-                {user?.role === 'artist' && (
-                    <div onClick={() => { navigate('/artist-dashboard'); setDropdownOpen(false); }}>
-                        Quản lý Kênh Nghệ sĩ
-                    </div>
-                )}
-                {/* ==================================== */}
+                <div className="user-dropdown">
+                  {/* Link Profile Cá nhân */}
+                  <div onClick={() => { navigate('/profile/info'); setDropdownOpen(false); }}>Tài khoản cá nhân</div>
+                  
+                  {/* Link Dashboard Nghệ sĩ (DÙNG LẠI LOGIC ARTIST) */}
+                  {user?.role === 'artist' && (
+                      <div onClick={() => { navigate('/artist-dashboard/info'); setDropdownOpen(false); }}>
+                          Quản lý nghệ sĩ
+                      </div>
+                  )}
 
-                <div onClick={logout}>Đăng xuất</div>
-              </div>
+                  <div onClick={logout}>Đăng xuất</div>
+                </div>
               )}
             </div>
           </>

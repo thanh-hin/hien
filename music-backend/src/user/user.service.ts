@@ -17,7 +17,7 @@ export class UserService {
    */
   async findById(id: number): Promise<Omit<User, 'password' | 'otp'>> { 
     const user = await this.userRepository.findOne({ 
-        where: { id },
+        where: { id,},
         // === SỬA LỖI: THÊM 'artist' VÀO ĐÂY ===
         relations: ['role', 'playlists', 'likedSongs', 'artist'] 
         // =====================================

@@ -39,6 +39,7 @@ import ArtistRegistrationPage from './pages/ArtistRegistrationPage'; // <-- (2) 
 import ArtistDashboardLayout from './pages/ArtistDashboard/ArtistDashboardLayout'; // <-- (1) IMPORT MỚI
 import ArtistInfo from './pages/ArtistDashboard/ArtistInfo'; // <-- (2) IMPORT MỚI
 import ArtistAlbums from './pages/ArtistDashboard/ArtistAlbums'; // <-- (1) IMPORT MỚI
+import ArtistSongs from './pages/ArtistDashboard/ArtistSongs'; // <-- (1) IMPORT MỚI
 
 function App() {
   return (
@@ -68,7 +69,7 @@ function App() {
         {/* === (3) ROUTE PUBLIC PROFILE MỚI (LỒNG NHAU) === */}
         <Route path="profile/:username" element={<PublicProfileLayout />}>
             <Route index element={<PublicProfilePlaylists />} />
-            <Route path="playlists" element={<PublicProfilePlaylists />} /> // Mặc định hiển thị Playlists
+            <Route path="playlists" element={<PublicProfilePlaylists />} />
             <Route path="likes" element={<PublicProfileLikes />} />
             <Route path="following" element={<PublicProfileFollowing />} />
         </Route>
@@ -80,11 +81,8 @@ function App() {
                 <Route index element={<ArtistInfo />} />
                 <Route path="info" element={<ArtistInfo />} />
                 {/* (Tạm thời placeholder cho các tab khác) */}
-                <Route path="songs" element={<div>Trang Quản lý Bài hát (Sắp ra mắt)</div>} />
+                <Route path="songs" element={<ArtistSongs />} />
                 <Route path="albums" element={<ArtistAlbums />} />
-                <Route path="playlists" element={<div>Trang Playlist Nghệ sĩ (Sắp ra mắt)</div>} />
-                <Route path="likes" element={<LikedSongsPage />} />
-                <Route path="following" element={<ProfileFollowing />} />
             </Route>
         
         {/* (4) ROUTE BẢO VỆ (CẦN LOGIN) */}

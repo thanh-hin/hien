@@ -186,23 +186,6 @@ const Home = () => {
         )}
       </div>
 
-      {/* TIN HOT */}
-      <div className="home-section">
-        <div className="home-section-header">
-          <h3>Tin hot</h3>
-          <a href="/blog" className="see-more-link">
-            Xem thêm
-          </a>
-        </div>
-        <div className="horizontal-scroll">
-          {mockPosts.map((post) => (
-            <div key={post.id} className="post-card">
-              <img src={post.image} alt={post.title} />
-              <p>{post.title}</p>
-            </div>
-          ))}
-        </div>
-      </div>
 
       <Footer />
     </div>
