@@ -188,7 +188,7 @@
 .profile-edit-form input:focus,
 .profile-edit-form textarea:focus {
   outline: none;
-  border-color: var(--color-accent);
+  border-color: rgb(0, 109, 86);
   background: #222;
   box-shadow: 0 0 0 3px rgba(0,230,200,0.2);
 }

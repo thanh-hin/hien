@@ -97,7 +97,7 @@ color: #61eed6;
 /* GRID NGHỆ SĨ – DÙNG LẠI CỦA ALBUM */
 .artist-grid-new {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 150px));
   gap: 15px;
   padding: 0 32px;
   max-width: 1600px;

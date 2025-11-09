@@ -21,7 +21,6 @@ import { extname, join } from 'path';
 import { Equal } from 'typeorm';
 import { IsNull, In } from 'typeorm';
 
-
 @Injectable()
 export class SongService {
   constructor(
@@ -31,7 +30,7 @@ export class SongService {
     private artistRepository: Repository<Artist>,
     @InjectRepository(Album)
     private albumRepository: Repository<Album>,
-    @InjectRepository(Lyrics) // <-- (2) TIÊM LYRICS REPO MỚI
+    @InjectRepository(Lyrics) // <-- (1) PHẢI TIÊM LYRICS REPO
     private lyricsRepository: Repository<Lyrics>,
   ) {}
 
@@ -152,60 +151,73 @@ export class SongService {
     return query.getMany();
   }
 
-  /**
-   * (ARTIST) Tạo bài hát mới (Status: PENDING)
-   */
-  async createSong(
-    userId: number,
-    dto: CreateSongDto,
-    files: { audioFile?: Express.Multer.File[], imageFile?: Express.Multer.File[] }
-  ): Promise<Song> {
+/**
+ * (ARTIST) Tạo bài hát mới (Status: PENDING)
+ */
+async createSong(
+  userId: number,
+  dto: CreateSongDto,
+  files: { audioFile?: Express.Multer.File[], imageFile?: Express.Multer.File[] }
+): Promise<Song> {
 
-    if (!files?.audioFile?.[0]) throw new BadRequestException('File nhạc (audioFile) là bắt buộc.');
-
-    const artist = await this.getArtistByUserId(userId);
-
-    let album: Album | null = null;
-    if (dto.albumId) {
-        album = await this.albumRepository.findOne({
-            where: { id: parseInt(dto.albumId), artist: { id: artist.id } }
-        });
-        if (!album) throw new NotFoundException('Album không tồn tại hoặc không thuộc về bạn.');
-    }
-
-    const audioFile = files.audioFile[0];
-    const audioPath = `/uploads/music/${audioFile.filename}`;
-    const physicalPath = join(process.cwd(), 'uploads', 'music', audioFile.filename); // đường dẫn vật lý
-
-    const imagePath = files.imageFile?.[0] ? `/uploads/covers/${files.imageFile[0].filename}` : null;
-
-    const newSong = new Song();
-    newSong.title = dto.title;
-    newSong.file_url = audioPath;
-    newSong.image_url = imagePath || undefined;
-    newSong.track_number = dto.track_number ? Number(dto.track_number) : null;
-    newSong.active = true;
-    newSong.status = 'PENDING';
-    newSong.genre = dto.genre;
-
-    // === LẤY DURATION TỪ FILE AUDIO ===
-    let songDuration = 0;
-    try {
-        const metadata = await parseFile(physicalPath);
-        if (metadata.format.duration) {
-            songDuration = Math.floor(metadata.format.duration); // làm tròn giây
-        }
-    } catch (err) {
-        console.warn(`[METADATA WARNING] Không đọc được duration cho file ${audioFile.filename}:`, err.message);
-    }
-    newSong.duration = songDuration;
-
-    // === GÁN RELATIONSHIP ===
-    newSong.artist = artist;
-    newSong.album = album;
-
-    return this.songRepository.save(newSong);
+  if (!files?.audioFile?.[0]) {
+    throw new BadRequestException('File nhạc (audioFile) là bắt buộc.');
   }
+
+  const artist = await this.getArtistByUserId(userId);
+
+  let album: Album | null = null;
+  if (dto.albumId) {
+    album = await this.albumRepository.findOne({
+      where: { id: parseInt(dto.albumId), artist: { id: artist.id } }
+    });
+    if (!album) {
+      throw new NotFoundException('Album không tồn tại hoặc không thuộc về bạn.');
+    }
+  }
+
+  const imagePath = files.imageFile?.[0]
+  ? `/uploads/covers/${files.imageFile[0].filename}`
+  : null;
+
+const audioFile = files.audioFile[0];
+const audioPath = `/uploads/music/${audioFile.filename}`;
+const physicalPath = join(process.cwd(), 'uploads', 'music', audioFile.filename);
+
+let songDuration = 0;
+try {
+  const metadata = await parseFile(physicalPath);
+  if (metadata.format.duration) {
+    songDuration = Math.floor(metadata.format.duration);
+  }
+} catch (err) {
+  console.warn(`[METADATA WARNING] Không đọc được duration: ${err.message}`);
+}
+
+let lyricsEntity: Lyrics | null = null;
+if (dto.lyricsContent && dto.lyricsContent.trim()) {
+  lyricsEntity = this.lyricsRepository.create();
+  lyricsEntity.lyrics = dto.lyricsContent.trim();
+  lyricsEntity.language = 'vi'; // <-- fix: mặc định 'vi'
+}
+
+const newSong = new Song();
+newSong.title = dto.title;
+newSong.file_url = audioPath;
+newSong.image_url = imagePath ?? undefined; // <-- fix null -> undefined
+newSong.duration = songDuration;
+newSong.track_number = dto.track_number ? Number(dto.track_number) : null;
+newSong.active = true;
+newSong.status = 'PENDING';
+newSong.genre = dto.genre;
+
+newSong.artist = artist;
+newSong.album = album;
+newSong.lyrics = lyricsEntity;
+
+return this.songRepository.save(newSong);
+}
+
 
   async updateMySong(
     userId: number, 

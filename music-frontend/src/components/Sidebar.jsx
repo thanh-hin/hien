@@ -141,7 +141,7 @@ const Sidebar = () => {
 
           {/* YÊU THÍCH */}
           <li className={activePage === 'liked-songs' ? 'active' : ''} onClick={() => handleProtectedClick('/liked-songs')}>
-            <div className="icon-box" style={{ background: 'linear-gradient(135deg, #ff0000ff, #C4EFD9)' }}>
+            <div className="icon-box" style={{ background: 'linear-gradient(135deg, #006c4dff, #C4EFD9)' }}>
               <GoHeartFill size={16} />
             </div>
             <span>Bài hát yêu thích</span>

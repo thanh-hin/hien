@@ -75,7 +75,7 @@ export class Song {
 
   // Quan hệ: Một Song có một Lyrics (1-1)
   @OneToOne(() => Lyrics, (lyrics) => lyrics.song)
-  lyrics: Lyrics;
+  lyrics: Lyrics | null;
 
   // Quan hệ: Bài hát này được thích bởi những User nào
   @OneToMany(() => UserLikedSongs, (likedSong) => likedSong.song)

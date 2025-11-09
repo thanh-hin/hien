@@ -21,4 +21,8 @@ export class CreateSongDto {
   @IsOptional() // <-- QUAN TRỌNG
   @IsNumberString() 
   duration?: string; // <-- Đã đúng (nhận chuỗi)
+
+  @IsOptional() // <-- Lời bài hát là Optional
+  @IsString()
+  lyricsContent?: string; // <-- TRƯỜNG MỚI
 }
