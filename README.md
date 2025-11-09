@@ -1,6 +1,10 @@
 # hien
 trong terminal của frontend: npm run start
+
+
 trong terminal của backend: npm run start:dev
+
+
 trong terminal xử lý AI:
 PS G:\Documents\2. HK1_nam4\music\music-ai-server> pip install fastapi uvicorn numpy
 >> uvicorn main:app --reload --port 5000
